@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -71,4 +72,13 @@ func PostHTTP(address, body string) ([]byte, error) {
 	}()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func Base64Decode(s string) string {
+	res, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return ""
+	}
+
+	return string(res)
 }
