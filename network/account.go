@@ -1,12 +1,15 @@
 package network
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
+	sdkData "github.com/multiversx/mx-sdk-go/data"
 	"github.com/stakingagency/sa-mx-sdk-go/data"
 	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
@@ -68,4 +71,27 @@ func (nm *NetworkManager) GetAccountKey(address string, key string) ([]byte, err
 	}
 
 	return hex.DecodeString(response.Data.Value)
+}
+
+func (nm *NetworkManager) DNSResolve(herotag string) string {
+	scAddress := utils.GetDNSAddress(herotag)
+	query := &sdkData.VmValueRequest{
+		Address:  scAddress,
+		FuncName: "resolve",
+		Args:     []string{hex.EncodeToString([]byte(herotag))},
+	}
+	rawList, err := nm.proxy.ExecuteVMQuery(context.Background(), query)
+	if err != nil {
+		return ""
+	}
+
+	list := rawList.Data.ReturnData
+	if len(list) == 0 {
+		return ""
+	}
+
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	address := converter.Encode(list[0])
+
+	return address
 }

@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"github.com/multiversx/mx-chain-crypto-go/signing"
@@ -56,4 +57,47 @@ func NewNetworkManager(proxyAddress string, indexAddress string) (*NetworkManage
 	}
 
 	return nm, nil
+}
+
+func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []string) (*big.Int, error) {
+	if args == nil {
+		args = make([]string, 0)
+	}
+	request := &sdkData.VmValueRequest{
+		Address:  scAddress,
+		FuncName: funcName,
+		Args:     args,
+	}
+	res, err := nm.proxy.ExecuteVMQuery(context.Background(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res.Data.ReturnData) == 0 {
+		return big.NewInt(0), nil
+	}
+
+	return big.NewInt(0).SetBytes(res.Data.ReturnData[0]), nil
+}
+
+func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args []string) ([]*big.Int, error) {
+	if args == nil {
+		args = make([]string, 0)
+	}
+	request := &sdkData.VmValueRequest{
+		Address:  scAddress,
+		FuncName: funcName,
+		Args:     args,
+	}
+	res, err := nm.proxy.ExecuteVMQuery(context.Background(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	ints := make([]*big.Int, 0)
+	for _, b := range res.Data.ReturnData {
+		ints = append(ints, big.NewInt(0).SetBytes(b))
+	}
+
+	return ints, nil
 }

@@ -3,9 +3,11 @@ module github.com/stakingagency/sa-mx-sdk-go
 go 1.17
 
 require (
+	github.com/multiversx/mx-chain-core-go v1.1.33
 	github.com/multiversx/mx-chain-crypto-go v1.2.6
 	github.com/multiversx/mx-chain-logger-go v1.0.11
 	github.com/multiversx/mx-sdk-go v1.2.7
+	golang.org/x/net v0.2.0
 )
 
 require (
@@ -18,7 +20,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiversx/concurrent-map v0.1.4 // indirect
-	github.com/multiversx/mx-chain-core-go v1.1.33 // indirect
 	github.com/multiversx/mx-chain-go v1.4.15 // indirect
 	github.com/multiversx/mx-chain-p2p-go v1.0.10 // indirect
 	github.com/multiversx/mx-chain-storage-go v1.0.7 // indirect
@@ -28,5 +29,6 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )

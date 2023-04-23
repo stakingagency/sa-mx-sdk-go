@@ -3,76 +3,18 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
+	"encoding/binary"
 	"io/ioutil"
-	"net/http"
 	"strings"
+
+	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
+	"github.com/multiversx/mx-chain-core-go/hashing/keccak"
+	logger "github.com/multiversx/mx-chain-logger-go"
+	"golang.org/x/crypto/sha3"
+	"golang.org/x/net/html/charset"
 )
 
-func GetHTTP(address string, body string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, address, bytes.NewBuffer([]byte(body)))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	resBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return resBody, fmt.Errorf("http error %v %v, endpoint %s", resp.StatusCode, resp.Status, address)
-	}
-
-	return resBody, nil
-}
-
-func DeleteHTTP(address string, body string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodDelete, address, bytes.NewBuffer([]byte(body)))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-	resBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return resBody, nil
-}
-
-func PostHTTP(address, body string) ([]byte, error) {
-	resp, err := http.Post(address, "application/json", strings.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	}()
-
-	return ioutil.ReadAll(resp.Body)
-}
+var log = logger.GetOrCreate("network")
 
 func Base64Decode(s string) string {
 	res, err := base64.StdEncoding.DecodeString(s)
@@ -81,4 +23,46 @@ func Base64Decode(s string) string {
 	}
 
 	return string(res)
+}
+
+func UTF8(s string) string {
+	r, err := charset.NewReader(strings.NewReader(s), "latin1")
+	if err != nil {
+		return ""
+	}
+
+	result, err := ioutil.ReadAll(r)
+	if err != nil {
+		return ""
+	}
+
+	return string(result)
+}
+
+func GetDNSAddress(username string) string {
+	h := sha3.NewLegacyKeccak256()
+	_, _ = h.Write([]byte(username))
+	hash := h.Sum(nil)
+	shardId := hash[len(hash)-1]
+	var initialDNSAddress = bytes.Repeat([]byte{1}, 32)
+	shardInBytes := []byte{0, shardId}
+	newDNSPk := string(initialDNSAddress[:(30)]) + string(shardInBytes)
+	creatorAddress := []byte(newDNSPk)
+
+	buffNonce := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buffNonce, 0)
+	adrAndNonce := append([]byte(newDNSPk), buffNonce...)
+	base := keccak.NewKeccak().Compute(string(adrAndNonce))
+
+	prefixMask := make([]byte, 8)
+	prefixMask = append(prefixMask, []byte{5, 0}...)
+	suffixMask := creatorAddress[len(creatorAddress)-2:]
+
+	copy(base[:10], prefixMask)
+	copy(base[len(base)-2:], suffixMask)
+
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	dnsAddress := converter.Encode(base)
+
+	return dnsAddress
 }
