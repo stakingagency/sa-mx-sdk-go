@@ -1,15 +1,36 @@
-package network
+package tokens
 
 import (
 	"encoding/hex"
 
+	"github.com/stakingagency/sa-mx-sdk-go/accounts"
 	"github.com/stakingagency/sa-mx-sdk-go/data"
+	"github.com/stakingagency/sa-mx-sdk-go/network"
 	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
 
-func (nm *NetworkManager) GetAllTokens() (map[string]*data.ESDT, error) {
+type Tokens struct {
+	netMan             *network.NetworkManager
+	esdtIssueScAccount *accounts.Account
+}
+
+func NewTokens(netMan *network.NetworkManager) (*Tokens, error) {
+	esdtIssueScAcount, err := accounts.NewAccount(utils.EsdtIssueSC, netMan)
+	if err != nil {
+		return nil, err
+	}
+
+	t := &Tokens{
+		netMan:             netMan,
+		esdtIssueScAccount: esdtIssueScAcount,
+	}
+
+	return t, nil
+}
+
+func (tok *Tokens) GetAllTokens() (map[string]*data.ESDT, error) {
 	tokens := make(map[string]*data.ESDT)
-	keys, err := nm.GetAccountKeys(utils.EsdtIssueSC, "")
+	keys, err := tok.esdtIssueScAccount.GetAccountKeys("")
 	if err != nil {
 		return nil, err
 	}

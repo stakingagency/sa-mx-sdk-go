@@ -55,7 +55,7 @@ func (nm *NetworkManager) SearchIndexer(index string, query interface{}, sort []
 
 		if list.Shards.Failed > 0 {
 			log.Error("indexer error", "endpoint", endpoint, "result", string(bytes), "function", "searchIndexer")
-			return nil, errors.New("failed indexer shard(s)")
+			return nil, utils.ErrFailedIndexerShard
 		}
 
 		pits = append(pits, list.PitId)
@@ -105,7 +105,7 @@ func (nm *NetworkManager) GetTxInfo(hash string) (*data.IndexerEntry, error) {
 	}
 
 	if len(res) != 1 {
-		return nil, errors.New("tx not found")
+		return nil, utils.ErrTxNotFound
 	}
 
 	return res[0], nil
@@ -145,7 +145,7 @@ func (nm *NetworkManager) GetTxResult(hash string) error {
 	start := time.Now().Unix()
 	for {
 		if time.Now().Unix()-start > 120 {
-			return errors.New("timeout")
+			return utils.ErrTimeout
 		}
 
 		time.Sleep(time.Second * 12)

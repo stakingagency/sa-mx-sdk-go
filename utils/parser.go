@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"math/big"
 )
 
@@ -98,4 +100,31 @@ func ParsePubkey(bytes []byte, index int) ([]byte, int, bool) {
 	}
 
 	return bytes[index : index+pubkeyLenCap], index + pubkeyLenCap, true
+}
+
+func GetKey(key string, keys map[string][]byte) ([]byte, error) {
+	result, ok := keys[hex.EncodeToString([]byte(key))]
+	if !ok {
+		return nil, fmt.Errorf("%v key not found", key)
+	}
+
+	return result, nil
+}
+
+func GetBigIntKey(key string, keys map[string][]byte) (*big.Int, error) {
+	result, err := GetKey(key, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(0).SetBytes(result), nil
+}
+
+func GetBoolKey(key string, keys map[string][]byte) (bool, error) {
+	result, err := GetKey(key, keys)
+	if err != nil {
+		return false, err
+	}
+
+	return len(result) == 1 && result[0] == 1, nil
 }

@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
 	"github.com/multiversx/mx-chain-crypto-go/signing"
 	"github.com/multiversx/mx-chain-crypto-go/signing/ed25519"
 	logger "github.com/multiversx/mx-chain-logger-go"
@@ -59,7 +60,23 @@ func NewNetworkManager(proxyAddress string, indexAddress string) (*NetworkManage
 	return nm, nil
 }
 
-func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []string) (*big.Int, error) {
+func (nm *NetworkManager) GetProxy() blockchain.Proxy {
+	return nm.proxy
+}
+
+func (nm *NetworkManager) GetProxyAddress() string {
+	return nm.proxyAddress
+}
+
+func (nm *NetworkManager) GetIndexAddress() string {
+	return nm.indexAddress
+}
+
+func (nm *NetworkManager) GetNetworkConfig() *sdkData.NetworkConfig {
+	return nm.netCfg
+}
+
+func (nm *NetworkManager) querySC(scAddress, funcName string, args []string) (*sdkData.VmValuesResponseData, error) {
 	if args == nil {
 		args = make([]string, 0)
 	}
@@ -69,6 +86,15 @@ func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []st
 		Args:     args,
 	}
 	res, err := nm.proxy.ExecuteVMQuery(context.Background(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []string) (*big.Int, error) {
+	res, err := nm.querySC(scAddress, funcName, args)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +107,7 @@ func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []st
 }
 
 func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args []string) ([]*big.Int, error) {
-	if args == nil {
-		args = make([]string, 0)
-	}
-	request := &sdkData.VmValueRequest{
-		Address:  scAddress,
-		FuncName: funcName,
-		Args:     args,
-	}
-	res, err := nm.proxy.ExecuteVMQuery(context.Background(), request)
+	res, err := nm.querySC(scAddress, funcName, args)
 	if err != nil {
 		return nil, err
 	}
@@ -100,4 +118,20 @@ func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args
 	}
 
 	return ints, nil
+}
+
+func (nm *NetworkManager) QueryScAddressResult(scAddress, funcName string, args []string) (string, error) {
+	res, err := nm.querySC(scAddress, funcName, args)
+	if err != nil {
+		return "", err
+	}
+
+	if len(res.Data.ReturnData) == 0 {
+		return "", nil
+	}
+
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	address := converter.Encode(res.Data.ReturnData[0])
+
+	return address, nil
 }
