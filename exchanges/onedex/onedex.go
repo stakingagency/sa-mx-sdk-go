@@ -30,7 +30,6 @@ const (
 type (
 	NewPairCallbackFunc             func(ticker1 string, ticker2 string)
 	PairStateChangedCallbackFunc    func(ticker1 string, ticker2 string, newState bool)
-	DexStateChangedCallbackFunc     func(newState bool)
 	NewStakeCallbackFunc            func(ticker string)
 	NewFarmCallbackFunc             func(lpTicker string, rewardTicker string)
 	NewDualFarmCallbackFunc         func(lpTicker string, rewardTicker1 string, rewardTicker2 string)
@@ -49,7 +48,6 @@ type OneDex struct {
 	mxTokens           *tokens.Tokens
 	refreshInterval    time.Duration
 
-	dexState          bool
 	liquidityPools    map[uint32]*LiquidityPool
 	liquidityPoolsMut sync.Mutex
 	farms             map[uint32]*Farm
@@ -61,7 +59,6 @@ type OneDex struct {
 
 	newPairCallback              NewPairCallbackFunc
 	pairStateChangedCallback     PairStateChangedCallbackFunc
-	dexStateChangedCallback      DexStateChangedCallbackFunc
 	newStakeCallback             NewStakeCallbackFunc
 	newFarmCallback              NewFarmCallbackFunc
 	newDualFarmCallback          NewDualFarmCallbackFunc
@@ -117,7 +114,6 @@ func NewOneDex(netMan *network.NetworkManager, refreshInterval time.Duration) (*
 
 		newPairCallback:              nil,
 		pairStateChangedCallback:     nil,
-		dexStateChangedCallback:      nil,
 		newStakeCallback:             nil,
 		newFarmCallback:              nil,
 		newDualFarmCallback:          nil,
@@ -138,10 +134,6 @@ func (one *OneDex) SetNewPairCallback(f NewPairCallbackFunc) {
 
 func (one *OneDex) SetPairStateChangedCallback(f PairStateChangedCallbackFunc) {
 	one.pairStateChangedCallback = f
-}
-
-func (one *OneDex) SetDexStateChangedCallback(f DexStateChangedCallbackFunc) {
-	one.dexStateChangedCallback = f
 }
 
 func (one *OneDex) SetNewStakeCallback(f NewStakeCallbackFunc) {
