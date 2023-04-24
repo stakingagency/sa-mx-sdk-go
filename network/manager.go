@@ -2,6 +2,8 @@ package network
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/multiversx/mx-sdk-go/blockchain"
 	"github.com/multiversx/mx-sdk-go/core"
 	sdkData "github.com/multiversx/mx-sdk-go/data"
+	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
 
 type NetworkManager struct {
@@ -134,4 +137,19 @@ func (nm *NetworkManager) QueryScAddressResult(scAddress, funcName string, args 
 	address := converter.Encode(res.Data.ReturnData[0])
 
 	return address, nil
+}
+
+func (nm *NetworkManager) QueryProxy(path string, value interface{}) error {
+	endpoint := fmt.Sprintf("%s/%s", nm.proxyAddress, path)
+	res, err := utils.GetHTTP(endpoint, "")
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(res, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

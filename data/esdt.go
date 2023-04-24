@@ -6,27 +6,23 @@ type ESDT struct {
 	ShortTicker string
 	Decimals    uint64
 	Type        string
+	IsPaused    bool
+
+	Supply        float64
+	Minted        float64
+	Burned        float64
+	InitialMinted float64
 }
 
-type TokensList struct {
-	Data struct {
-		Tokens []string `json:"tokens"`
-	} `json:"data"`
+type EsdtMintInfoResponse struct {
+	Data  EsdtMintInfo `json:"data"`
+	Error string       `json:"error"`
+	Code  string       `json:"code"`
 }
 
-type WalletEsdts struct {
-	Data struct {
-		Esdts map[string]*WalletEsdtEntry `json:"esdts"`
-	} `json:"data"`
-}
-
-type WalletEsdt struct {
-	Data struct {
-		TokenData WalletEsdtEntry `json:"tokenData"`
-	} `json:"data"`
-}
-
-type WalletEsdtEntry struct {
-	Identifier string `json:"tokenIdentifier"`
-	Balance    string `json:"balance"`
+type EsdtMintInfo struct {
+	Supply        string `json:"supply"`
+	Minted        string `json:"minted"`
+	Burned        string `json:"burned"`
+	InitialMinted string `json:"initialMinted"`
 }

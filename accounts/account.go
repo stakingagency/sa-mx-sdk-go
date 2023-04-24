@@ -3,10 +3,13 @@ package accounts
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	logger "github.com/multiversx/mx-chain-logger-go"
 	sdkData "github.com/multiversx/mx-sdk-go/data"
@@ -15,20 +18,50 @@ import (
 	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
 
+type (
+	EgldBalanceChangedCallbackFunc  func(oldBalance float64, newBalance float64)
+	TokenBalanceChangedCallbackFunc func(ticker string, oldBalance float64, newBalance float64)
+)
+
 type Account struct {
-	netMan  *network.NetworkManager
-	address string
+	netMan          *network.NetworkManager
+	address         string
+	refreshInterval time.Duration
+
+	cachedEgldBalance       float64
+	cachedTokensBalances    map[string]float64
+	cachedTokensBalancesMut sync.Mutex
+	cachedEsdts             map[string]*data.ESDT
+
+	egldBalanceChangedCallback  EgldBalanceChangedCallbackFunc
+	tokenBalanceChangedCallback TokenBalanceChangedCallbackFunc
 }
 
 var log = logger.GetOrCreate("accounts")
 
-func NewAccount(address string, nm *network.NetworkManager) (*Account, error) {
+func NewAccount(address string, nm *network.NetworkManager, refreshInterval time.Duration) (*Account, error) {
 	acc := &Account{
-		netMan:  nm,
-		address: address,
+		netMan:          nm,
+		address:         address,
+		refreshInterval: refreshInterval,
+
+		cachedTokensBalances: make(map[string]float64),
+		cachedEsdts:          make(map[string]*data.ESDT),
+
+		egldBalanceChangedCallback:  nil,
+		tokenBalanceChangedCallback: nil,
 	}
+	acc.startTasks()
 
 	return acc, nil
+}
+
+func (acc *Account) SetEgldBalanceChangedCallback(f EgldBalanceChangedCallbackFunc) {
+	acc.egldBalanceChangedCallback = f
+}
+
+func (acc *Account) SetTokenBalanceChangedCallback(f TokenBalanceChangedCallbackFunc) {
+	acc.tokenBalanceChangedCallback = f
 }
 
 func (acc *Account) GetAddress() string {
@@ -36,17 +69,11 @@ func (acc *Account) GetAddress() string {
 }
 
 func (acc *Account) GetAccountKeys(prefix string) (map[string][]byte, error) {
-	endpoint := fmt.Sprintf("%s/address/%s/keys", acc.netMan.GetProxyAddress(), acc.address)
-	bytes, err := utils.GetHTTP(endpoint, "")
-	if err != nil {
-		log.Error("get http", "error", err, "endpoint", endpoint, "function", "GetAccountKeys")
-		return nil, err
-	}
-
+	endpoint := fmt.Sprintf("address/%s/keys", acc.address)
 	response := &data.AccountKeys{}
-	err = json.Unmarshal(bytes, response)
+	err := acc.netMan.QueryProxy(endpoint, response)
 	if err != nil {
-		log.Error("unmarshal http response (get)", "error", err, "endpoint", endpoint, "function", "GetAccountKeys")
+		log.Error("query proxy", "error", err, "endpoint", endpoint, "function", "GetAccountKeys")
 		return nil, err
 	}
 
@@ -72,17 +99,11 @@ func (acc *Account) GetAccountKeys(prefix string) (map[string][]byte, error) {
 }
 
 func (acc *Account) GetAccountKey(key string) ([]byte, error) {
-	endpoint := fmt.Sprintf("%s/address/%s/key/%s", acc.netMan.GetProxyAddress(), acc.address, key)
-	bytes, err := utils.GetHTTP(endpoint, "")
-	if err != nil {
-		log.Error("get http", "error", err, "endpoint", endpoint, "function", "GetAccountKey")
-		return nil, err
-	}
-
+	endpoint := fmt.Sprintf("address/%s/key/%s", acc.address, key)
 	response := &data.AccountKey{}
-	err = json.Unmarshal(bytes, response)
+	err := acc.netMan.QueryProxy(endpoint, response)
 	if err != nil {
-		log.Error("unmarshal http response (get)", "error", err, "endpoint", endpoint, "function", "GetAccountKey")
+		log.Error("query proxy", "error", err, "endpoint", endpoint, "function", "GetAccountKey")
 		return nil, err
 	}
 
@@ -121,4 +142,68 @@ func (acc *Account) GetEgldBalance() (float64, error) {
 	}
 
 	return balance, nil
+}
+
+func (acc *Account) GetCachedEgldBalance() (float64, error) {
+	if acc.refreshInterval == 0 {
+		return 0, utils.ErrRefreshIntervalNotSet
+	}
+
+	return acc.cachedEgldBalance, nil
+}
+
+func (acc *Account) GetTokensBalances() (map[string]float64, error) {
+	prefix := hex.EncodeToString([]byte("ELRONDesdt"))
+	keys, err := acc.GetAccountKeys(prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]float64)
+	for key, value := range keys {
+		ticker := strings.TrimPrefix(key, prefix)
+		decimals, err := acc.GetTokenDecimals(ticker)
+		if err != nil {
+			decimals = 18
+		}
+		res[ticker] = utils.Denominate(big.NewInt(0).SetBytes(value), decimals)
+	}
+
+	return res, nil
+}
+
+func (acc *Account) GetCachedTokensBalances() (map[string]float64, error) {
+	if acc.refreshInterval == 0 {
+		return nil, utils.ErrRefreshIntervalNotSet
+	}
+
+	res := make(map[string]float64)
+	acc.cachedTokensBalancesMut.Lock()
+	for k, v := range acc.cachedTokensBalances {
+		res[k] = v
+	}
+	acc.cachedTokensBalancesMut.Unlock()
+
+	return res, nil
+}
+
+func (acc *Account) GetTokenDecimals(ticker string) (int, error) {
+	args := []string{hex.EncodeToString([]byte(ticker))}
+	res, err := acc.netMan.QueryScMultiIntResult(utils.EsdtIssueSC, "getTokenProperties", args)
+	if err != nil {
+		return 0, err
+	}
+
+	if len(res) < 6 {
+		return 0, utils.ErrInvalidResponse
+	}
+
+	sDecimals := strings.TrimPrefix(res[5].String(), "NumDecimals-")
+	decimals, err := strconv.ParseUint(sDecimals, 10, 64)
+	if err != nil {
+		return 0, utils.ErrInvalidResponse
+	}
+
+	return int(decimals), nil
+
 }

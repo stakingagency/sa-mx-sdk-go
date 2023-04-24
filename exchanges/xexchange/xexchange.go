@@ -22,7 +22,7 @@ type XExchange struct {
 var log = logger.GetOrCreate("xexchange")
 
 func NewXExchange(netMan *network.NetworkManager) (*XExchange, error) {
-	routerScAccount, err := accounts.NewAccount(utils.DexRouterSC, netMan)
+	routerScAccount, err := accounts.NewAccount(utils.DexRouterSC, netMan, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (xex *XExchange) GetDexPairs() (map[string]*data.DexPair, error) {
 }
 
 func (xex *XExchange) getPairData(ticker1 string, ticker2 string, contractAddress string) (*data.DexPair, error) {
-	account, err := accounts.NewAccount(contractAddress, xex.netMan)
+	account, err := accounts.NewAccount(contractAddress, xex.netMan, 0)
 	if err != nil {
 		return nil, err
 	}

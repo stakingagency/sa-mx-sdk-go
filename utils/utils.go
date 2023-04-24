@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"io/ioutil"
+	"math/big"
 	"strings"
 
 	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
@@ -65,4 +66,15 @@ func GetDNSAddress(username string) string {
 	dnsAddress := converter.Encode(base)
 
 	return dnsAddress
+}
+
+func Denominate(iValue *big.Int, decimals int) float64 {
+	fValue := big.NewFloat(0).SetInt(iValue)
+	ten := big.NewFloat(10)
+	for i := 0; i < decimals; i++ {
+		fValue.Quo(fValue, ten)
+	}
+	res, _ := fValue.Float64()
+
+	return res
 }
