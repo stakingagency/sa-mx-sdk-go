@@ -223,7 +223,7 @@ func (st *Staking) GetProviderConfig(providerAddress string) (*data.StakingProvi
 		Owner:            owner,
 		ServiceFee:       utils.Denominate(res[1], 18) / 100,
 		MaxDelegationCap: utils.Denominate(res[2], 18),
-		HasDelegationCap: res[5].String() == "true",
+		HasDelegationCap: string(res[5].Bytes()) == "true",
 	}
 	cfg.Name, cfg.Website, cfg.Identity, err = st.GetMetaData(providerAddress)
 	if err != nil {

@@ -161,12 +161,23 @@ func (acc *Account) GetTokensBalances() (map[string]float64, error) {
 
 	res := make(map[string]float64)
 	for key, value := range keys {
-		ticker := strings.TrimPrefix(key, prefix)
+		sTicker := strings.TrimPrefix(key, prefix)
+		bTicker, err := hex.DecodeString(sTicker)
+		if err != nil {
+			continue
+		}
+
+		ticker := string(bTicker)
 		decimals, err := acc.GetTokenDecimals(ticker)
 		if err != nil {
 			decimals = 18
 		}
-		res[ticker] = utils.Denominate(big.NewInt(0).SetBytes(value), decimals)
+		bBalance, _, ok := utils.ParseByteArray(value, 1)
+		if !ok {
+			continue
+		}
+
+		res[ticker] = utils.Denominate(big.NewInt(0).SetBytes(bBalance), decimals)
 	}
 
 	return res, nil
@@ -198,7 +209,7 @@ func (acc *Account) GetTokenDecimals(ticker string) (int, error) {
 		return 0, utils.ErrInvalidResponse
 	}
 
-	sDecimals := strings.TrimPrefix(res[5].String(), "NumDecimals-")
+	sDecimals := strings.TrimPrefix(string(res[5].Bytes()), "NumDecimals-")
 	decimals, err := strconv.ParseUint(sDecimals, 10, 64)
 	if err != nil {
 		return 0, utils.ErrInvalidResponse

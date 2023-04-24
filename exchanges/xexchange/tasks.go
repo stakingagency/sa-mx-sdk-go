@@ -15,16 +15,18 @@ func (xex *XExchange) startTasks() {
 	}
 
 	go func() {
-		startTime := time.Now().UnixNano()
+		for {
+			startTime := time.Now().UnixNano()
 
-		xex.refreshPairs()
+			xex.refreshPairs()
 
-		endTime := time.Now().UnixNano()
-		waitTime := xex.refreshInterval - time.Duration(endTime-startTime)
-		if waitTime > 0 {
-			time.Sleep(waitTime)
+			endTime := time.Now().UnixNano()
+			waitTime := xex.refreshInterval - time.Duration(endTime-startTime)
+			if waitTime > 0 {
+				time.Sleep(waitTime)
+			}
+			initialized = true
 		}
-		initialized = true
 	}()
 }
 

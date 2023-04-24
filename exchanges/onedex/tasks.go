@@ -14,19 +14,21 @@ func (one *OneDex) startTasks() {
 	}
 
 	go func() {
-		startTime := time.Now().UnixNano()
+		for {
+			startTime := time.Now().UnixNano()
 
-		one.refreshLiquidityPools()
-		one.refreshFarms()
-		one.refreshStakes()
-		one.refreshLaunchpads()
+			one.refreshLiquidityPools()
+			one.refreshFarms()
+			one.refreshStakes()
+			one.refreshLaunchpads()
 
-		endTime := time.Now().UnixNano()
-		waitTime := one.refreshInterval - time.Duration(endTime-startTime)
-		if waitTime > 0 {
-			time.Sleep(waitTime)
+			endTime := time.Now().UnixNano()
+			waitTime := one.refreshInterval - time.Duration(endTime-startTime)
+			if waitTime > 0 {
+				time.Sleep(waitTime)
+			}
+			initialized = true
 		}
-		initialized = true
 	}()
 }
 

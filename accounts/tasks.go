@@ -14,17 +14,19 @@ func (acc *Account) startTasks() {
 	}
 
 	go func() {
-		startTime := time.Now().UnixNano()
+		for {
+			startTime := time.Now().UnixNano()
 
-		acc.refreshEgldBalance()
-		acc.refreshTokensBalances()
+			acc.refreshEgldBalance()
+			acc.refreshTokensBalances()
 
-		endTime := time.Now().UnixNano()
-		waitTime := acc.refreshInterval - time.Duration(endTime-startTime)
-		if waitTime > 0 {
-			time.Sleep(waitTime)
+			endTime := time.Now().UnixNano()
+			waitTime := acc.refreshInterval - time.Duration(endTime-startTime)
+			if waitTime > 0 {
+				time.Sleep(waitTime)
+			}
+			initialized = true
 		}
-		initialized = true
 	}()
 }
 
@@ -35,7 +37,7 @@ func (acc *Account) refreshEgldBalance() {
 		return
 	}
 
-	if acc.egldBalanceChangedCallback != nil && initialized {
+	if newEgldBalance != acc.cachedEgldBalance && acc.egldBalanceChangedCallback != nil && initialized {
 		acc.egldBalanceChangedCallback(acc.cachedEgldBalance, newEgldBalance)
 	}
 	acc.cachedEgldBalance = newEgldBalance

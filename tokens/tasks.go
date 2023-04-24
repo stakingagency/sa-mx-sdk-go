@@ -14,16 +14,18 @@ func (tok *Tokens) startTasks() {
 	}
 
 	go func() {
-		startTime := time.Now().UnixNano()
+		for {
+			startTime := time.Now().UnixNano()
 
-		tok.refreshTokens()
+			tok.refreshTokens()
 
-		endTime := time.Now().UnixNano()
-		waitTime := tok.refreshInterval - time.Duration(endTime-startTime)
-		if waitTime > 0 {
-			time.Sleep(waitTime)
+			endTime := time.Now().UnixNano()
+			waitTime := tok.refreshInterval - time.Duration(endTime-startTime)
+			if waitTime > 0 {
+				time.Sleep(waitTime)
+			}
+			initialized = true
 		}
-		initialized = true
 	}()
 }
 

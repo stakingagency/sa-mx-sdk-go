@@ -172,7 +172,7 @@ func (tok *Tokens) IsTokenPaused(ticker string) (bool, error) {
 		return false, utils.ErrInvalidResponse
 	}
 
-	isPaused := res[6].String() == "IsPaused-true"
+	isPaused := string(res[6].Bytes()) == "IsPaused-true"
 
 	return isPaused, nil
 }
@@ -208,19 +208,19 @@ func (tok *Tokens) GetTokenProperties(ticker string) (*data.ESDT, error) {
 		return nil, utils.ErrInvalidResponse
 	}
 
-	sDecimals := strings.TrimPrefix(res[5].String(), "NumDecimals-")
+	sDecimals := strings.TrimPrefix(string(res[5].Bytes()), "NumDecimals-")
 	decimals, err := strconv.ParseUint(sDecimals, 10, 64)
 	if err != nil {
 		return nil, utils.ErrInvalidResponse
 	}
 
 	esdt := &data.ESDT{
-		Name:        res[0].String(),
-		Type:        res[1].String(),
+		Name:        string(res[0].Bytes()),
+		Type:        string(res[1].Bytes()),
 		Ticker:      ticker,
 		ShortTicker: strings.Split(ticker, "-")[0],
 		Decimals:    decimals,
-		IsPaused:    res[6].String() == "IsPaused-true",
+		IsPaused:    string(res[6].Bytes()) == "IsPaused-true",
 	}
 
 	err = tok.getTokenMintInfo(esdt)
