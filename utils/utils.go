@@ -78,3 +78,14 @@ func Denominate(iValue *big.Int, decimals int) float64 {
 
 	return res
 }
+
+func Renominate(value float64, decimals int) *big.Int {
+	fValue := big.NewFloat(value)
+	ten := big.NewFloat(10)
+	for i := 0; i < decimals; i++ {
+		fValue.Mul(fValue, ten)
+	}
+	res, _ := fValue.Int(nil)
+
+	return res
+}

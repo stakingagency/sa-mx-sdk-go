@@ -10,6 +10,9 @@ const (
 	USDC  = "USDC-c76f1f"
 	WEGLD = "WEGLD-bd4d79"
 	MEX   = "MEX-455c57"
+
+	AutoNonce    = 0xFFFFFFFFFFFFFFFF
+	AutoGasLimit = uint64(0)
 )
 
 var (

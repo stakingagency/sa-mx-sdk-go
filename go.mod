@@ -18,6 +18,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiversx/concurrent-map v0.1.4 // indirect
@@ -26,8 +27,10 @@ require (
 	github.com/multiversx/mx-chain-storage-go v1.0.7 // indirect
 	github.com/multiversx/mx-chain-vm-common-go v1.3.37 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
+	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.3 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
+	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
