@@ -1,6 +1,7 @@
 package xexchange
 
 import (
+	"encoding/hex"
 	"math/big"
 	"time"
 
@@ -31,14 +32,15 @@ func (xex *XExchange) startTasks() {
 }
 
 func (xex *XExchange) refreshPairs() {
-	bNewState, err := xex.routerScAccount.GetAccountKey("state")
+	stateKey := hex.EncodeToString([]byte("state"))
+	bNewState, err := xex.routerScAccount.GetAccountKey(stateKey)
 	if err != nil {
 		log.Error("get dex state", "error", err, "function", "refreshPairs")
 		return
 	}
 
 	newState := big.NewInt(0).SetBytes(bNewState).Uint64() == 1
-	if initialized && xex.dexStateChangedCallback != nil {
+	if newState != xex.dexState && initialized && xex.dexStateChangedCallback != nil {
 		xex.dexStateChangedCallback(newState)
 	}
 	xex.dexState = newState

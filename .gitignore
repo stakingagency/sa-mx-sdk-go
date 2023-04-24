@@ -2,5 +2,8 @@ examples/accounts/noRefresh/noRefresh
 examples/accounts/refresh/refresh
 examples/index/index
 examples/staking/staking
+examples/telegramBot/telegramBot
 examples/tokens/tokens
 examples/transactions/transactions
+examples/exchanges/onedex/onedex
+examples/exchanges/xexchange/xexchange
