@@ -1317,7 +1317,7 @@ func (one *OneDex) GetCachedTokenPrice(ticker string, egldPrice float64) float64
 			return price
 		}
 
-		if lp.LpToken.Ticker == ticker {
+		if lp.LpToken != nil && lp.LpToken.Ticker == ticker {
 			price := lp.Token2Reserve * 2 / lp.LpTokenSupply
 			if lp.Token2.Ticker == utils.WEGLD {
 				price *= egldPrice

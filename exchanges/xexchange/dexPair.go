@@ -1,16 +1,17 @@
-package data
+package xexchange
 
 import (
 	"math/big"
 
+	"github.com/stakingagency/sa-mx-sdk-go/data"
 	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
 
 type DexPair struct {
 	ContractAddress string
 	State           bool
-	Token1          *ESDT
-	Token2          *ESDT
+	Token1          *data.ESDT
+	Token2          *data.ESDT
 	Balance1        *big.Int
 	Balance2        *big.Int
 	Fee             *big.Int

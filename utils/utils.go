@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
@@ -88,4 +91,23 @@ func Renominate(value float64, decimals int) *big.Int {
 	res, _ := fValue.Int(nil)
 
 	return res
+}
+
+type priceType struct {
+	Symbol string `json:"symbol"`
+	Price  string `price:"price"`
+}
+
+func GetBinancePrice(symbol string) float64 {
+	body, err := GetHTTP(fmt.Sprintf("https://api.binance.com/api/v3/ticker/price?symbol=%sUSDT", symbol), "")
+	if err != nil {
+		return 0
+	}
+	var pt priceType
+	json.Unmarshal(body, &pt)
+	p, err := strconv.ParseFloat(pt.Price, 64)
+	if err != nil {
+		return 0
+	}
+	return p
 }

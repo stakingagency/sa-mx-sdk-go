@@ -11,7 +11,6 @@ import (
 	"github.com/multiversx/mx-chain-core-go/core/pubkeyConverter"
 	logger "github.com/multiversx/mx-chain-logger-go"
 	"github.com/stakingagency/sa-mx-sdk-go/accounts"
-	"github.com/stakingagency/sa-mx-sdk-go/data"
 	"github.com/stakingagency/sa-mx-sdk-go/network"
 	"github.com/stakingagency/sa-mx-sdk-go/tokens"
 	"github.com/stakingagency/sa-mx-sdk-go/utils"
@@ -30,7 +29,7 @@ type XExchange struct {
 	refreshInterval time.Duration
 
 	dexState       bool
-	cachedPairs    map[string]*data.DexPair
+	cachedPairs    map[string]*DexPair
 	cachedPairsMut sync.Mutex
 
 	newPairCallback          NewPairCallbackFunc
@@ -57,7 +56,7 @@ func NewXExchange(netMan *network.NetworkManager, refreshInterval time.Duration)
 		mxTokens:        mxTokens,
 		refreshInterval: refreshInterval,
 
-		cachedPairs: make(map[string]*data.DexPair),
+		cachedPairs: make(map[string]*DexPair),
 
 		newPairCallback:          nil,
 		pairStateChangedCallback: nil,
@@ -80,12 +79,12 @@ func (xex *XExchange) SetDexStateChangedCallback(f DexStateChangedCallbackFunc) 
 	xex.dexStateChangedCallback = f
 }
 
-func (xex *XExchange) GetCachedDexPairs() (map[string]*data.DexPair, error) {
+func (xex *XExchange) GetCachedDexPairs() (map[string]*DexPair, error) {
 	if xex.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
 
-	res := make(map[string]*data.DexPair)
+	res := make(map[string]*DexPair)
 	xex.cachedPairsMut.Lock()
 	for k, v := range xex.cachedPairs {
 		res[k] = v
@@ -95,8 +94,8 @@ func (xex *XExchange) GetCachedDexPairs() (map[string]*data.DexPair, error) {
 	return res, nil
 }
 
-func (xex *XExchange) GetDexPairs() (map[string]*data.DexPair, error) {
-	pairs := make(map[string]*data.DexPair)
+func (xex *XExchange) GetDexPairs() (map[string]*DexPair, error) {
+	pairs := make(map[string]*DexPair)
 	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
 	prefix := hex.EncodeToString([]byte("pair_map.mapped"))
 	keys, err := xex.routerScAccount.GetAccountKeys(prefix)
@@ -133,7 +132,7 @@ func (xex *XExchange) GetDexPairs() (map[string]*data.DexPair, error) {
 	return pairs, nil
 }
 
-func (xex *XExchange) getPairData(ticker1 string, ticker2 string, contractAddress string) (*data.DexPair, error) {
+func (xex *XExchange) getPairData(ticker1 string, ticker2 string, contractAddress string) (*DexPair, error) {
 	account, err := accounts.NewAccount(contractAddress, xex.netMan, 0)
 	if err != nil {
 		return nil, err
@@ -144,7 +143,7 @@ func (xex *XExchange) getPairData(ticker1 string, ticker2 string, contractAddres
 		return nil, err
 	}
 
-	result := &data.DexPair{
+	result := &DexPair{
 		ContractAddress: contractAddress,
 	}
 
@@ -205,7 +204,7 @@ func (xex *XExchange) getPairData(ticker1 string, ticker2 string, contractAddres
 	return result, nil
 }
 
-func (xex *XExchange) GetPairByTickers(ticker1 string, ticker2 string) (*data.DexPair, error) {
+func (xex *XExchange) GetPairByTickers(ticker1 string, ticker2 string) (*DexPair, error) {
 	searchBytes := []byte("pair_map.mapped")
 	t1 := utils.EncodeString(ticker1)
 	searchBytes = append(searchBytes, t1...)
@@ -238,7 +237,7 @@ func (xex *XExchange) GetPairByTickers(ticker1 string, ticker2 string) (*data.De
 	return pair, nil
 }
 
-func (xex *XExchange) GetPairByContractAddress(contractAddress string) (*data.DexPair, error) {
+func (xex *XExchange) GetPairByContractAddress(contractAddress string) (*DexPair, error) {
 	acc, err := accounts.NewAccount(contractAddress, xex.netMan, utils.NoRefresh)
 	if err != nil {
 		return nil, err
@@ -262,7 +261,7 @@ func (xex *XExchange) GetPairByContractAddress(contractAddress string) (*data.De
 	return pair, nil
 }
 
-func (xex *XExchange) GetCachedPairByTickers(ticker1 string, ticker2 string) (*data.DexPair, error) {
+func (xex *XExchange) GetCachedPairByTickers(ticker1 string, ticker2 string) (*DexPair, error) {
 	if xex.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
@@ -283,12 +282,12 @@ func (xex *XExchange) GetCachedPairByTickers(ticker1 string, ticker2 string) (*d
 	return pair, nil
 }
 
-func (xex *XExchange) GetCachedPairByContractAddress(contractAddress string) (*data.DexPair, error) {
+func (xex *XExchange) GetCachedPairByContractAddress(contractAddress string) (*DexPair, error) {
 	if xex.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
 
-	var pair *data.DexPair
+	var pair *DexPair
 	xex.cachedPairsMut.Lock()
 	for _, cachedPair := range xex.cachedPairs {
 		if cachedPair.ContractAddress == contractAddress {
