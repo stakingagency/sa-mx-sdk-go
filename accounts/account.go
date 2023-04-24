@@ -145,7 +145,7 @@ func (acc *Account) GetEgldBalance() (float64, error) {
 }
 
 func (acc *Account) GetCachedEgldBalance() (float64, error) {
-	if acc.refreshInterval == 0 {
+	if acc.refreshInterval == utils.NoRefresh {
 		return 0, utils.ErrRefreshIntervalNotSet
 	}
 
@@ -173,7 +173,7 @@ func (acc *Account) GetTokensBalances() (map[string]float64, error) {
 }
 
 func (acc *Account) GetCachedTokensBalances() (map[string]float64, error) {
-	if acc.refreshInterval == 0 {
+	if acc.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
 

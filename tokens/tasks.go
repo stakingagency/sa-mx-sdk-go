@@ -2,12 +2,14 @@ package tokens
 
 import (
 	"time"
+
+	"github.com/stakingagency/sa-mx-sdk-go/utils"
 )
 
 var initialized = false
 
 func (tok *Tokens) startTasks() {
-	if tok.refreshInterval == 0 {
+	if tok.refreshInterval == utils.NoRefresh {
 		return
 	}
 

@@ -1,11 +1,15 @@
 package accounts
 
-import "time"
+import (
+	"time"
+
+	"github.com/stakingagency/sa-mx-sdk-go/utils"
+)
 
 var initialized = false
 
 func (acc *Account) startTasks() {
-	if acc.refreshInterval == 0 {
+	if acc.refreshInterval == utils.NoRefresh {
 		return
 	}
 

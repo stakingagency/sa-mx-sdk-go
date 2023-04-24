@@ -1,5 +1,7 @@
 package utils
 
+import "time"
+
 const (
 	StakingSC           = "erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqplllst77y4l"
 	DelegationManagerSC = "erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqylllslmq6y6"
@@ -13,6 +15,7 @@ const (
 
 	AutoNonce    = 0xFFFFFFFFFFFFFFFF
 	AutoGasLimit = uint64(0)
+	NoRefresh    = time.Duration(0)
 )
 
 var (

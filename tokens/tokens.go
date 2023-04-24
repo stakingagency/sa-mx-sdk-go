@@ -71,7 +71,7 @@ func (tok *Tokens) SetTokenSupplyChangedCallback(f TokenSupplyChangedCallbackFun
 }
 
 func (tok *Tokens) GetCachedTokens() (map[string]*data.ESDT, error) {
-	if tok.refreshInterval == 0 {
+	if tok.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
 
@@ -178,7 +178,7 @@ func (tok *Tokens) IsTokenPaused(ticker string) (bool, error) {
 }
 
 func (tok *Tokens) GetCachedTokenProperties(ticker string) (*data.ESDT, error) {
-	if tok.refreshInterval == 0 {
+	if tok.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
 	}
 
