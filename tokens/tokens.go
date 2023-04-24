@@ -150,7 +150,7 @@ func (tok *Tokens) GetTokens() (map[string]*data.ESDT, error) {
 			continue
 		}
 
-		esdt.IsPaused, err = tok.IsTokenPaused(esdt.Name)
+		esdt.IsPaused, err = tok.IsTokenPaused(ticker)
 		if err != nil {
 			continue
 		}
