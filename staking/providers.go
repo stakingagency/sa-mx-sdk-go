@@ -123,7 +123,12 @@ func (st *Staking) GetCachedMetaData(providerAddress string) (
 	cfg := st.cachedProviders[providerAddress]
 	st.cachedProvidersMut.Unlock()
 	if cfg == nil {
-		return "", "", "", utils.ErrProviderNotFound
+		name, website, identity, err = st.GetMetaData(providerAddress)
+		if err != nil {
+			return "", "", "", err
+		}
+
+		return
 	}
 
 	return cfg.Name, cfg.Website, cfg.Identity, nil
@@ -191,7 +196,11 @@ func (st *Staking) GetCachedProviderConfig(providerAddress string) (*data.Stakin
 	cfg := st.cachedProviders[providerAddress]
 	st.cachedProvidersMut.Unlock()
 	if cfg == nil {
-		return nil, utils.ErrProviderNotFound
+		var err error
+		cfg, err = st.GetProviderConfig(providerAddress)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cfg, nil

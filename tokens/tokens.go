@@ -187,7 +187,11 @@ func (tok *Tokens) GetCachedTokenProperties(ticker string) (*data.ESDT, error) {
 	tok.cachedEsdtsMut.Unlock()
 
 	if token == nil {
-		return nil, utils.ErrTokenNotFound
+		var err error
+		token, err = tok.GetTokenProperties(ticker)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return token, nil

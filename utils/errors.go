@@ -8,6 +8,4 @@ var (
 	ErrTxNotFound            = errors.New("tx not found")
 	ErrTimeout               = errors.New("timeout")
 	ErrRefreshIntervalNotSet = errors.New("refresh interval not set")
-	ErrTokenNotFound         = errors.New("token not found")
-	ErrProviderNotFound      = errors.New("Staking provider not found")
 )

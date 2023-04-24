@@ -14,6 +14,14 @@ const (
 	pubkeyLenCap = 32
 )
 
+func EncodeString(s string) []byte {
+	l := uint32(len(s))
+	res := make([]byte, stringLenCap)
+	binary.BigEndian.PutUint32(res, l)
+
+	return append(res, []byte(s)...)
+}
+
 func ParseString(bytes []byte, index int) (string, int, bool) {
 	datalen := len(bytes)
 	if index+stringLenCap >= datalen {
