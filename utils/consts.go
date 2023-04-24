@@ -10,6 +10,8 @@ const (
 	ContractDeploy      = "erd1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6gq4hu"
 
 	USDC  = "USDC-c76f1f"
+	USDT  = "USDT-f8c08c"
+	BUSD  = "BUSD-40b57e"
 	WEGLD = "WEGLD-bd4d79"
 	MEX   = "MEX-455c57"
 
