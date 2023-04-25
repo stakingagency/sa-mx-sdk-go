@@ -9,7 +9,7 @@ import (
 
 func (conv *AbiConverter) convertMutableEndpoints() ([]string, error) {
 	lines := make([]string, 0)
-
+	conv.imports["github.com/stakingagency/sa-mx-sdk-go/data"] = true
 	for _, endpoint := range conv.abi.Endpoints {
 		if endpoint.Mutability != "mutable" {
 			continue
@@ -19,18 +19,19 @@ func (conv *AbiConverter) convertMutableEndpoints() ([]string, error) {
 			lines = append(lines, "// only owner")
 		}
 		line := fmt.Sprintf("func (contract *%s) %s(", conv.abi.Name, utils.ToUpperFirstChar(endpoint.Name))
+
+		defaultInputs := "_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64"
+		if len(endpoint.Inputs) > 0 {
+			defaultInputs += ", "
+		}
 		inputs, err := conv.generateInputs(endpoint.Inputs)
 		if err != nil {
 			return nil, err
 		}
 
-		line += inputs + ") "
-		outputs, err := conv.generateOutputs(endpoint.Outputs)
-		if err != nil {
-			return nil, err
-		}
+		line += defaultInputs + inputs + ") "
 
-		line += outputs + " {"
+		line += "error {"
 		lines = append(lines, line)
 		body, err := conv.generateMutableBody(endpoint)
 		if err != nil {
@@ -47,9 +48,9 @@ func (conv *AbiConverter) generateMutableBody(endpoint data.AbiEndpoint) ([]stri
 	// generate input arguments
 	lines := make([]string, 0)
 	inputArgs := make([]string, 0)
-	for _, input := range endpoint.Inputs {
+	for i, input := range endpoint.Inputs {
 		goType, _ := conv.abiType2goType(input.Type) // we don't care for err because it was checked in generateInputs
-		inputArg, err := conv.generateInputArg(input.Name, goType)
+		inputArg, err := conv.generateInputArg(input.Name, goType, i)
 		if err != nil {
 			return nil, err
 		}
@@ -63,71 +64,39 @@ func (conv *AbiConverter) generateMutableBody(endpoint data.AbiEndpoint) ([]stri
 		lines = append(lines, "    "+arg)
 	}
 
-	// generate endpoint fetching
-	line := fmt.Sprintf("    res, err := contract.netMan.QuerySC(contract.contractAddress, \"%s\", ", endpoint.Name)
-	if len(inputArgs) > 0 {
-		line += "args)"
+	// generate endpoint sending transaction
+	isEsdtTx := len(endpoint.PayableInTokens) == 1 && endpoint.PayableInTokens[0] == "*"
+	line := ""
+	if isEsdtTx {
+		line = fmt.Sprintf("    dataField := hex.EncodeToString([]byte(\"%s\"))", endpoint.Name)
 	} else {
-		line += "nil)"
+		line = fmt.Sprintf("    dataField := \"%s\"", endpoint.Name)
+	}
+	if len(inputArgs) > 0 {
+		conv.imports["strings"] = true
+		line += " + \"@\" + strings.Join(args, \"@\")"
 	}
 	lines = append(lines, line)
-	lines = append(lines, "    if err != nil {")
-	line = "        return "
-	errReturn, err := conv.generateErrorReturn(endpoint.Outputs)
-	if err != nil {
-		return nil, err
+
+	// send transaction
+	if isEsdtTx {
+		lines = append(lines, "    hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)")
+	} else {
+		lines = append(lines, "    hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)")
 	}
 
-	lines = append(lines, line+errReturn)
+	lines = append(lines, "    if err != nil {")
+	lines = append(lines, "        return err")
 	lines = append(lines, "    }")
 	lines = append(lines, "")
 
-	// set output values
-	for i, output := range endpoint.Outputs {
-		if utils.IsMultiVariadic(output.Type) {
-			setMultiVariadic, err := conv.setMultiVariadicOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setMultiVariadic...)
-			continue
-		}
-
-		if utils.IsSimpleVariadic(output.Type) {
-			setVariadic, err := conv.setVariadicOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setVariadic...)
-			continue
-		}
-
-		if utils.IsList(output.Type) {
-			setList, err := conv.setListOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setList...)
-			continue
-		}
-
-		setSimpleValue, err := conv.setSimpleOutput(i, output)
-		if err != nil {
-			return nil, err
-		}
-
-		lines = append(lines, setSimpleValue...)
-	}
+	// watch transaction
+	lines = append(lines, "    err = contract.netMan.GetTxResult(hash)")
+	lines = append(lines, "    if err != nil {")
+	lines = append(lines, "        return err")
+	lines = append(lines, "    }")
 	lines = append(lines, "")
-	line = "    return "
-	for i := 0; i < len(endpoint.Outputs); i++ {
-		line += fmt.Sprintf("res%v, ", i)
-	}
-	line += "nil"
-	lines = append(lines, line)
+	lines = append(lines, "    return nil")
 	lines = append(lines, "}")
 	lines = append(lines, "")
 
