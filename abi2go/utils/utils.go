@@ -21,6 +21,16 @@ func IsList(s string) bool {
 	return strings.HasPrefix(s, "List<")
 }
 
-func IsVariadic(s string) bool {
-	return strings.HasPrefix(s, "variadic<")
+func IsSimpleVariadic(s string) bool {
+	n := strings.Count(s, "<")
+
+	return strings.HasPrefix(s, "variadic<") && n == 1
+}
+
+func IsMultiVariadic(s string) bool {
+	return strings.HasPrefix(s, "variadic<multi<") && !IsSimpleVariadic(s)
+}
+
+func IsTuple(s string) bool {
+	return strings.HasPrefix(s, "tuple<")
 }

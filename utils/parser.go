@@ -46,6 +46,14 @@ func ParseByte(bytes []byte, index int) (byte, int, bool) {
 	return bytes[index], index + 1, true
 }
 
+func ParseBool(bytes []byte, index int) (bool, int, bool) {
+	if index+1 > len(bytes) {
+		return false, 0, false
+	}
+
+	return bytes[index] == 1, index + 1, true
+}
+
 func ParseBigInt(bytes []byte, index int) (*big.Int, int, bool) {
 	datalen := len(bytes)
 	if index+bigIntLenCap >= datalen {

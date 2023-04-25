@@ -5,15 +5,17 @@ import (
 )
 
 type AbiConverter struct {
-	abi         *data.ABI
-	imports     map[string]bool
-	customTypes map[string]bool
+	abi          *data.ABI
+	imports      map[string]bool
+	customTypes  map[string]bool
+	complexTypes map[string]map[string]string
 }
 
 func NewAbiConverter(fileName string) (*AbiConverter, error) {
 	converter := &AbiConverter{
-		imports:     make(map[string]bool),
-		customTypes: make(map[string]bool),
+		imports:      make(map[string]bool),
+		customTypes:  make(map[string]bool),
+		complexTypes: make(map[string]map[string]string),
 	}
 	abi, err := converter.loadAbiFile(fileName)
 	if err != nil {

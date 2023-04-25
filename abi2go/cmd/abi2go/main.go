@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	abiFileName = "salsa.abi.json"
+	abiFileName = "onedex-sc.abi.json"
 )
 
 func main() {

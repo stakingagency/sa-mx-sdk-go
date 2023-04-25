@@ -17,7 +17,7 @@ type ABI struct {
 		Outputs []AbiEndpointIO `json:"outputs"`
 	} `json:"constructor"`
 	Endpoints    []AbiEndpoint       `json:"endpoints"`
-	Events       []AbiEvent          `json:"events"` // DEBUG
+	Events       []AbiEvent          `json:"events"`
 	HasCallbacks bool                `json:"hasCallbacks"`
 	Types        map[string]*AbiType `json:"types"`
 }
@@ -37,7 +37,16 @@ type AbiEndpointIO struct {
 	MultiResult bool   `json:"multi_result"`
 }
 
-type AbiEvent struct{}
+type AbiEvent struct {
+	Identifier string          `json:"identifier"`
+	Inputs     []AbiEventInput `json:"inputs"`
+}
+
+type AbiEventInput struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Indexed bool   `json:"indexed"`
+}
 
 type AbiType struct {
 	Type     string           `json:"type"`
