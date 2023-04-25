@@ -8,4 +8,5 @@ var (
 	ErrUnnamedInput                = errors.New("no name input")
 	ErrMixedNamedAndUnnamedOutputs = errors.New("mixed named and unnamed outputs")
 	ErrNotImplemented              = errors.New("not implemented")
+	ErrNotMultiversX               = errors.New("not a MultiversX ABI")
 )

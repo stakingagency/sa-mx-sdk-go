@@ -2,6 +2,7 @@ package converter
 
 import (
 	"github.com/stakingagency/sa-mx-sdk-go/abi2go/data"
+	"github.com/stakingagency/sa-mx-sdk-go/abi2go/errors"
 )
 
 type AbiConverter struct {
@@ -20,6 +21,10 @@ func NewAbiConverter(fileName string) (*AbiConverter, error) {
 	abi, err := converter.loadAbiFile(fileName)
 	if err != nil {
 		return nil, err
+	}
+
+	if abi.BuildInfo.Framework.Name != "multiversx-sc" {
+		return nil, errors.ErrNotMultiversX
 	}
 
 	converter.abi = abi

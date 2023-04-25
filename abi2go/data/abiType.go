@@ -24,6 +24,7 @@ type ABI struct {
 
 type AbiEndpoint struct {
 	Name            string          `json:"name"`
+	Docs            []string        `json:"docs"`
 	OnlyOwner       bool            `json:"onlyOwner"`
 	Mutability      string          `json:"mutability"`
 	PayableInTokens []string        `json:"payableInTokens"`
