@@ -11,6 +11,7 @@ import (
 
 var (
 	defaultTypeValues = map[string]string{
+		"string":                    "\"\"",
 		"TokenIdentifier":           "\"\"",
 		"EgldOrEsdtTokenIdentifier": "\"\"",
 		"uint32":                    "0",
@@ -341,6 +342,9 @@ func (conv *AbiConverter) setVariadicOutput(i int, output data.AbiEndpointIO) ([
 					case "EgldOrEsdtTokenIdentifier":
 						line += "String"
 
+					case "string":
+						line += "String"
+
 					default:
 						if conv.abi.Types[field.Type] != nil && conv.abi.Types[field.Type].Type == "enum" {
 							line += "Byte"
@@ -468,6 +472,9 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 	case "Address":
 		lines = append(lines, fmt.Sprintf("    res%v := res.Data.ReturnData[%v]", i, i))
 
+	case "string":
+		lines = append(lines, fmt.Sprintf("    res%v := string(res.Data.ReturnData[%v])", i, i))
+
 	default:
 		abiType, ok := conv.abi.Types[goType]
 		if ok {
@@ -504,6 +511,9 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 						line += "String"
 
 					case "EgldOrEsdtTokenIdentifier":
+						line += "String"
+
+					case "string":
 						line += "String"
 
 					default:

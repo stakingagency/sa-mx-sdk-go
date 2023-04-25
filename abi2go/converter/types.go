@@ -91,6 +91,9 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 
 	case "error":
 		return abiType, nil
+
+	case "bytes":
+		return "string", nil
 	}
 
 	_, ok := conv.abi.Types[abiType]
