@@ -392,7 +392,7 @@ func (conv *AbiConverter) setListOutput(i int, output data.AbiEndpointIO) ([]str
 		if conv.abi.Types[goType] != nil {
 			for _, field := range conv.abi.Types[goType].Fields {
 				fieldType, _ := conv.abiType2goType(field.Type)
-				lines = append(lines, fmt.Sprintf("    var %s %s", field.Name, fieldType))
+				lines = append(lines, fmt.Sprintf("    var _%s %s", field.Name, fieldType))
 			}
 		}
 	}
