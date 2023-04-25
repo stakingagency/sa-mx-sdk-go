@@ -49,9 +49,19 @@ func (conv *AbiConverter) convertTypes() ([]string, error) {
 }
 
 func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
+	// TODO: what is Option ?
+	if strings.HasPrefix(abiType, "Option<") {
+		abiType = strings.TrimPrefix(abiType, "Option<")
+		abiType = strings.TrimSuffix(abiType, ">")
+	}
+	if strings.HasPrefix(abiType, "optional<") {
+		abiType = strings.TrimPrefix(abiType, "optional<")
+		abiType = strings.TrimSuffix(abiType, ">")
+	}
+
 	switch abiType {
 	case "bool":
-		return "bool", nil
+		return abiType, nil
 
 	case "u64":
 		return "uint64", nil
@@ -65,17 +75,22 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		return "*big.Int", nil
 
 	case "TokenIdentifier":
-		conv.customTypes["TokenIdentifier"] = true
+		conv.customTypes[abiType] = true
 
-		return "TokenIdentifier", nil
+		return abiType, nil
+
+	case "EgldOrEsdtTokenIdentifier":
+		conv.customTypes[abiType] = true
+
+		return abiType, nil
 
 	case "Address":
-		conv.customTypes["Address"] = true
+		conv.customTypes[abiType] = true
 
-		return "Address", nil
+		return abiType, nil
 
 	case "error":
-		return "error", nil
+		return abiType, nil
 	}
 
 	_, ok := conv.abi.Types[abiType]

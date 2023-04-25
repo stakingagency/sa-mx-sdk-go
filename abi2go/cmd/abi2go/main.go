@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	abiFileName = "onedex-sc.abi.json"
+	abiFileName = "onedex-farm-sc.abi.json"
 )
 
 func main() {
