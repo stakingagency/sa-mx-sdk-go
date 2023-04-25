@@ -221,7 +221,7 @@ func (st *Staking) GetProviderConfig(providerAddress string) (*data.StakingProvi
 	cfg := &data.StakingProvider{
 		ContractAddress:  providerAddress,
 		Owner:            owner,
-		ServiceFee:       utils.Denominate(res[1], 18) / 100,
+		ServiceFee:       utils.Denominate(res[1], 0) / 100,
 		MaxDelegationCap: utils.Denominate(res[2], 18),
 		HasDelegationCap: string(res[5].Bytes()) == "true",
 	}

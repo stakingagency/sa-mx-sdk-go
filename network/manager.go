@@ -79,7 +79,7 @@ func (nm *NetworkManager) GetNetworkConfig() *sdkData.NetworkConfig {
 	return nm.netCfg
 }
 
-func (nm *NetworkManager) querySC(scAddress, funcName string, args []string) (*sdkData.VmValuesResponseData, error) {
+func (nm *NetworkManager) QuerySC(scAddress, funcName string, args []string) (*sdkData.VmValuesResponseData, error) {
 	if args == nil {
 		args = make([]string, 0)
 	}
@@ -97,7 +97,7 @@ func (nm *NetworkManager) querySC(scAddress, funcName string, args []string) (*s
 }
 
 func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []string) (*big.Int, error) {
-	res, err := nm.querySC(scAddress, funcName, args)
+	res, err := nm.QuerySC(scAddress, funcName, args)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []st
 }
 
 func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args []string) ([]*big.Int, error) {
-	res, err := nm.querySC(scAddress, funcName, args)
+	res, err := nm.QuerySC(scAddress, funcName, args)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args
 }
 
 func (nm *NetworkManager) QueryScAddressResult(scAddress, funcName string, args []string) (string, error) {
-	res, err := nm.querySC(scAddress, funcName, args)
+	res, err := nm.QuerySC(scAddress, funcName, args)
 	if err != nil {
 		return "", err
 	}

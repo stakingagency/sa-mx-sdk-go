@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	proxyAddress = "https://gateway.multiversx.com"
+	proxyAddress    = "https://gateway.multiversx.com"
+	providerAddress = "erd1qqqqqqqqqqqqqqqpqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhllllsajxzat"
 )
 
 var stake *staking.Staking
@@ -37,6 +38,13 @@ func main() {
 
 	fmt.Println("watching providers info changes")
 	for {
+		time.Sleep(time.Minute)
+		provider, err := stake.GetCachedProviderConfig(providerAddress)
+		if err != nil {
+			continue
+		}
+
+		fmt.Printf("%s has %v eGLD available\n", provider.Name, int(provider.MaxDelegationCap-provider.ActiveStake))
 	}
 }
 
