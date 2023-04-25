@@ -475,15 +475,15 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 				lines = append(lines, fmt.Sprintf("    res%v := %s(big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64())", i, output.Type, i))
 			} else {
 				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-				lines = append(lines, "        idx := 0")
-				lines = append(lines, "        ok, allOk := true, true")
+				lines = append(lines, "    idx := 0")
+				lines = append(lines, "    ok, allOk := true, true")
 				for _, field := range abiType.Fields {
 					innerGoType, err := conv.abiType2goType(field.Type)
 					if err != nil {
 						return nil, err
 					}
 
-					line := fmt.Sprintf("        _%s, idx, ok := utils.Parse", field.Name)
+					line := fmt.Sprintf("    _%s, idx, ok := utils.Parse", field.Name)
 					switch innerGoType {
 					case "uint64":
 						line += "Uint64"
@@ -515,27 +515,27 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 					}
 					line += fmt.Sprintf("(res.Data.ReturnData[%v], idx)", i)
 					lines = append(lines, line)
-					lines = append(lines, "        allOk = allOk && ok")
+					lines = append(lines, "    allOk = allOk && ok")
 				}
-				lines = append(lines, "        if !allOk {")
+				lines = append(lines, "    if !allOk {")
 				errReturn, err := conv.generateErrorReturn([]data.AbiEndpointIO{output})
 				if err != nil {
 					return nil, err
 				}
 
 				conv.imports["errors"] = true
-				lines = append(lines, "            return "+errReturn+"ors.New(\"invalid response\")")
-				lines = append(lines, "        }")
-				lines = append(lines, fmt.Sprintf("        res%v := %s{", i, goType))
+				lines = append(lines, "        return "+errReturn+"ors.New(\"invalid response\")")
+				lines = append(lines, "    }")
+				lines = append(lines, fmt.Sprintf("    res%v := %s{", i, goType))
 				for _, field := range abiType.Fields {
 					abiType, ok := conv.abi.Types[field.Type]
 					if (ok && abiType.Type == "enum") || conv.customTypes[field.Type] {
-						lines = append(lines, fmt.Sprintf("            %s: %s(_%s),", field.Name, field.Type, field.Name))
+						lines = append(lines, fmt.Sprintf("        %s: %s(_%s),", field.Name, field.Type, field.Name))
 						continue
 					}
-					lines = append(lines, fmt.Sprintf("            %s: _%s,", field.Name, field.Name))
+					lines = append(lines, fmt.Sprintf("        %s: _%s,", field.Name, field.Name))
 				}
-				lines = append(lines, "        }")
+				lines = append(lines, "    }")
 			}
 		} else {
 			complexType, ok := conv.complexTypes[goType]
