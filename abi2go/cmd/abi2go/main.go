@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	abiFileName = "salsa.abi.json"
+	abiFileName = "abis/salsa.abi.json"
 )
 
 func main() {

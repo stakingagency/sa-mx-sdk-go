@@ -37,6 +37,7 @@ func main() {
 	stake.SetProviderSpaceAvailableCallback(spaceAvailable)
 
 	fmt.Println("watching providers info changes")
+	lastAvailable := 0
 	for {
 		time.Sleep(time.Minute)
 		provider, err := stake.GetCachedProviderConfig(providerAddress)
@@ -44,7 +45,11 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%s has %v eGLD available\n", provider.Name, int(provider.MaxDelegationCap-provider.ActiveStake))
+		newAvailable := int(provider.MaxDelegationCap - provider.ActiveStake)
+		if lastAvailable != newAvailable {
+			fmt.Printf("%s has %v eGLD available\n", provider.Name, newAvailable)
+		}
+		lastAvailable = newAvailable
 	}
 }
 
