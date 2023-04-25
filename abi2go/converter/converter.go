@@ -43,6 +43,13 @@ func (conv *AbiConverter) Convert() error {
 
 	lines = append(lines, readonlyEndpointsLines...)
 
+	mutableEndpointsLines, err := conv.convertMutableEndpoints()
+	if err != nil {
+		return err
+	}
+
+	lines = append(lines, mutableEndpointsLines...)
+
 	imports, err := conv.generateImports()
 	if err != nil {
 		return err

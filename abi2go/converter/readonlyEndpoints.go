@@ -61,7 +61,11 @@ func (conv *AbiConverter) generateImports() ([]string, error) {
 	if len(conv.imports) > 0 {
 		lines = append(lines, "import (")
 		for imp := range conv.imports {
-			lines = append(lines, fmt.Sprintf("    \"%s\"", imp))
+			if strings.Contains(imp, "\"") {
+				lines = append(lines, fmt.Sprintf("    %s", imp))
+			} else {
+				lines = append(lines, fmt.Sprintf("    \"%s\"", imp))
+			}
 		}
 		lines = append(lines, ")")
 		lines = append(lines, "")
@@ -99,9 +103,9 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 	// generate input arguments
 	lines := make([]string, 0)
 	inputArgs := make([]string, 0)
-	for _, input := range endpoint.Inputs {
+	for i, input := range endpoint.Inputs {
 		goType, _ := conv.abiType2goType(input.Type) // we don't care for err because it was checked in generateInputs
-		inputArg, err := conv.generateInputArg(input.Name, goType)
+		inputArg, err := conv.generateInputArg(input.Name, goType, i)
 		if err != nil {
 			return nil, err
 		}
@@ -629,16 +633,16 @@ func (conv *AbiConverter) generateOutputs(outputs []data.AbiEndpointIO) (string,
 	return res, nil
 }
 
-func (conv *AbiConverter) generateInputArg(name string, goType string) ([]string, error) {
+func (conv *AbiConverter) generateInputArg(name string, goType string, i int) ([]string, error) {
 	switch goType {
 	case "uint64":
 		conv.imports["encoding/binary"] = true
 		conv.imports["encoding/hex"] = true
 
 		return []string{
-			"bytes := make([]byte, 8)",
-			"binary.BigEndian.PutUint64(bytes, " + name + ")",
-			"args = append(args, hex.EncodeToString(bytes))",
+			fmt.Sprintf("bytes%v64 := make([]byte, 8)", i),
+			fmt.Sprintf("binary.BigEndian.PutUint64(bytes%v64, "+name+")", i),
+			fmt.Sprintf("args = append(args, hex.EncodeToString(bytes%v64))", i),
 		}, nil
 
 	case "uint32":
@@ -646,9 +650,9 @@ func (conv *AbiConverter) generateInputArg(name string, goType string) ([]string
 		conv.imports["encoding/hex"] = true
 
 		return []string{
-			"bytes := make([]byte, 4)",
-			"binary.BigEndian.PutUint32(bytes, " + name + ")",
-			"args = append(args, hex.EncodeToString(bytes))",
+			fmt.Sprintf("bytes%v32 := make([]byte, 4)", i),
+			fmt.Sprintf("binary.BigEndian.PutUint32(bytes%v32, "+name+")", i),
+			fmt.Sprintf("args = append(args, hex.EncodeToString(bytes%v32))", i),
 		}, nil
 
 	case "Address":
@@ -661,7 +665,20 @@ func (conv *AbiConverter) generateInputArg(name string, goType string) ([]string
 
 		return []string{"args = append(args, hex.EncodeToString(" + name + ".Bytes()))"}, nil
 
+	case "bool":
+		return []string{"if " + name + " {args = append(args, \"01\") } else {args = append(args, \"00\")}"}, nil
+
 	case "TokenIdentifier":
+		conv.imports["encoding/hex"] = true
+
+		return []string{"args = append(args, hex.EncodeToString([]byte(" + name + ")))"}, nil
+
+	case "EgldOrEsdtTokenIdentifier":
+		conv.imports["encoding/hex"] = true
+
+		return []string{"args = append(args, hex.EncodeToString([]byte(" + name + ")))"}, nil
+
+	case "string":
 		conv.imports["encoding/hex"] = true
 
 		return []string{"args = append(args, hex.EncodeToString([]byte(" + name + ")))"}, nil
@@ -670,7 +687,7 @@ func (conv *AbiConverter) generateInputArg(name string, goType string) ([]string
 	if strings.HasPrefix(goType, "[]") {
 		lines := make([]string, 0)
 		lines = append(lines, fmt.Sprintf("for _, elem := range %s {", name))
-		args, err := conv.generateInputArg("elem", strings.TrimPrefix(goType, "[]"))
+		args, err := conv.generateInputArg("elem", strings.TrimPrefix(goType, "[]"), i)
 		if err != nil {
 			return nil, err
 		}
