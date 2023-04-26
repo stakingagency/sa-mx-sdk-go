@@ -215,8 +215,8 @@ func (conv *AbiConverter) appendContractType(lines *[]string) {
 			"    contractAddress string\n" +
 			"}\n" +
 			"\n" +
-			"func New%s(contractAddress string, proxyAddress string) (*%s, error) {\n" +
-			"    netMan, err := network.NewNetworkManager(proxyAddress, \"\")\n" +
+			"func New%s(contractAddress string, proxyAddress string, indexAddress string) (*%s, error) {\n" +
+			"    netMan, err := network.NewNetworkManager(proxyAddress, indexAddress)\n" +
 			"    if err != nil {\n" +
 			"        return nil, err\n" +
 			"    }\n" +
