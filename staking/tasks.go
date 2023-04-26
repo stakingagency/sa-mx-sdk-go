@@ -60,8 +60,8 @@ func (st *Staking) refreshProviders() {
 						st.providerCapChangedCallback(address, oldCfg.MaxDelegationCap, newCfg.MaxDelegationCap)
 					}
 				}
-				hadSpace := oldCfg.HasDelegationCap && oldCfg.ActiveStake >= oldCfg.MaxDelegationCap
-				hasSpace := newCfg.HasDelegationCap && newCfg.ActiveStake >= newCfg.MaxDelegationCap
+				hadSpace := oldCfg.HasDelegationCap && oldCfg.ActiveStake <= oldCfg.MaxDelegationCap
+				hasSpace := newCfg.HasDelegationCap && newCfg.ActiveStake <= newCfg.MaxDelegationCap
 				if !hadSpace && hasSpace && newCfg.HasDelegationCap && st.providerSpaceAvailableCallback != nil {
 					st.providerSpaceAvailableCallback(address, newCfg.MaxDelegationCap-newCfg.ActiveStake)
 				}
