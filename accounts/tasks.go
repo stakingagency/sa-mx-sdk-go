@@ -54,15 +54,19 @@ func (acc *Account) refreshTokensBalances() {
 	if acc.tokenBalanceChangedCallback != nil && initialized {
 		for ticker, newBalance := range newTokensBalances {
 			oldBalance := acc.cachedTokensBalances[ticker]
+			acc.cachedTokensBalancesMut.Unlock()
 			if oldBalance != newBalance {
 				acc.tokenBalanceChangedCallback(ticker, oldBalance, newBalance)
 				acc.cachedTokensBalances[ticker] = newBalance
 			}
+			acc.cachedTokensBalancesMut.Lock()
 		}
 		for ticker, oldBalance := range acc.cachedTokensBalances {
 			newBalance := newTokensBalances[ticker]
 			if oldBalance != newBalance {
+				acc.cachedTokensBalancesMut.Unlock()
 				acc.tokenBalanceChangedCallback(ticker, oldBalance, newBalance)
+				acc.cachedTokensBalancesMut.Lock()
 			}
 		}
 	}

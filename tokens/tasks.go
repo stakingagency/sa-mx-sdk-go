@@ -40,6 +40,7 @@ func (tok *Tokens) refreshTokens() {
 	if initialized {
 		for ticker, newEsdt := range newTokens {
 			oldEsdt := tok.cachedEsdts[ticker]
+			tok.cachedEsdtsMut.Unlock()
 			if oldEsdt == nil {
 				if tok.newTokenIssuedCallback != nil {
 					tok.newTokenIssuedCallback(ticker)
@@ -56,6 +57,7 @@ func (tok *Tokens) refreshTokens() {
 					}
 				}
 			}
+			tok.cachedEsdtsMut.Lock()
 			tok.cachedEsdts[ticker] = newEsdt
 		}
 	}

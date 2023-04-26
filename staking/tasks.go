@@ -40,6 +40,7 @@ func (st *Staking) refreshProviders() {
 	if initialized {
 		for address, newCfg := range newProviders {
 			oldCfg := st.cachedProviders[address]
+			st.cachedProvidersMut.Unlock()
 			if oldCfg == nil {
 				if st.newProviderCallback != nil {
 					st.newProviderCallback(address)
@@ -65,11 +66,14 @@ func (st *Staking) refreshProviders() {
 					st.providerSpaceAvailableCallback(address, newCfg.MaxDelegationCap-newCfg.ActiveStake)
 				}
 			}
+			st.cachedProvidersMut.Lock()
 			st.cachedProviders[address] = newCfg
 		}
 		for address := range st.cachedProviders {
 			if newProviders[address] == nil && st.providerClosedCallback != nil {
+				st.cachedProvidersMut.Unlock()
 				st.providerClosedCallback(address)
+				st.cachedProvidersMut.Lock()
 			}
 		}
 	}

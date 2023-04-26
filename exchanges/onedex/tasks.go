@@ -43,6 +43,7 @@ func (one *OneDex) refreshLiquidityPools() {
 	if initialized {
 		for id, newPool := range newLiquidityPools {
 			oldPool := one.liquidityPools[id]
+			one.liquidityPoolsMut.Unlock()
 			if oldPool == nil {
 				if one.newPairCallback != nil {
 					one.newPairCallback(newPool.Token1.Ticker, newPool.Token2.Ticker)
@@ -52,6 +53,7 @@ func (one *OneDex) refreshLiquidityPools() {
 					one.pairStateChangedCallback(newPool.Token1.Ticker, newPool.Token2.Ticker, newPool.Enabled)
 				}
 			}
+			one.liquidityPoolsMut.Lock()
 		}
 	}
 	one.liquidityPools = newLiquidityPools
@@ -69,6 +71,7 @@ func (one *OneDex) refreshFarms() {
 	if initialized {
 		for id, newFarm := range newFarms {
 			oldFarm := one.farms[id]
+			one.farmsMut.Unlock()
 			if oldFarm == nil {
 				if !newFarm.IsDual() {
 					if one.newFarmCallback != nil {
@@ -87,6 +90,7 @@ func (one *OneDex) refreshFarms() {
 					one.annualReward2ChangedCallback(id, oldFarm.AnnualRewardPerLP2, newFarm.AnnualRewardPerLP2)
 				}
 			}
+			one.farmsMut.Lock()
 		}
 	}
 	one.farms = newFarms
@@ -104,6 +108,7 @@ func (one *OneDex) refreshStakes() {
 	if initialized {
 		for id, newStake := range newStakes {
 			oldStake := one.stakes[id]
+			one.stakesMut.Unlock()
 			if oldStake == nil {
 				if one.newStakeCallback != nil {
 					one.newStakeCallback(newStake.Token.Ticker)
@@ -113,6 +118,7 @@ func (one *OneDex) refreshStakes() {
 					one.stakeAprChangedCallback(id, oldStake.APR, newStake.APR)
 				}
 			}
+			one.stakesMut.Lock()
 		}
 	}
 	one.stakes = newStakes
@@ -130,6 +136,7 @@ func (one *OneDex) refreshLaunchpads() {
 	if initialized {
 		for id, newLaunchpad := range newLaunchpads {
 			oldLaunchpad := one.launchpads[id]
+			one.launchpadsMut.Unlock()
 			if oldLaunchpad == nil {
 				if one.newLaunchpadCallback != nil {
 					one.newLaunchpadCallback(newLaunchpad.Token)
@@ -139,6 +146,7 @@ func (one *OneDex) refreshLaunchpads() {
 					one.launchpadEndedCallback(newLaunchpad.Token)
 				}
 			}
+			one.launchpadsMut.Lock()
 		}
 	}
 	one.launchpads = newLaunchpads

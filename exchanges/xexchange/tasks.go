@@ -55,6 +55,7 @@ func (xex *XExchange) refreshPairs() {
 	if initialized {
 		for pairTicker, newPair := range newPairs {
 			oldPair := xex.cachedPairs[pairTicker]
+			xex.cachedPairsMut.Unlock()
 			if oldPair == nil {
 				if xex.newPairCallback != nil {
 					xex.newPairCallback(newPair.Token1.Ticker, newPair.Token2.Ticker)
@@ -64,6 +65,7 @@ func (xex *XExchange) refreshPairs() {
 					xex.pairStateChangedCallback(newPair.Token1.Ticker, newPair.Token2.Ticker, newPair.State)
 				}
 			}
+			xex.cachedPairsMut.Lock()
 			xex.cachedPairs[pairTicker] = newPair
 		}
 	}
