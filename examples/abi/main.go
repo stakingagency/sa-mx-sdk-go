@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	contract, err := salsaContract.NewSalsaContract("erd1qqqqqqqqqqqqqpgqpk3qzj86tme9kzxdq87f2rdf5nlwsgvjvcqs5hke3x", "https://devnet-gateway.multiversx.com")
+	contract, err := salsaContract.NewSalsaContract(
+		"erd1qqqqqqqqqqqqqpgqpk3qzj86tme9kzxdq87f2rdf5nlwsgvjvcqs5hke3x",
+		"https://devnet-gateway.multiversx.com",
+		"https://devnet-index.multiversx.com",
+	)
 	if err != nil {
 		fmt.Println(err)
 		return
