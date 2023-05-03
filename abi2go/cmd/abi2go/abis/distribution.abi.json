@@ -1,0 +1,258 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.70.0-nightly",
+            "commitHash": "cf7ada217c8ac63367b184afd9fffaff30f6ed44",
+            "commitDate": "2023-04-03",
+            "channel": "Nightly",
+            "short": "rustc 1.70.0-nightly (cf7ada217 2023-04-03)"
+        },
+        "contractCrate": {
+            "name": "distribution",
+            "version": "0.0.0",
+            "gitVersion": "v1.6.0-1266-g30817f6c"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.39.4"
+        }
+    },
+    "name": "Distribution",
+    "constructor": {
+        "inputs": [
+            {
+                "name": "asset_token_id",
+                "type": "TokenIdentifier"
+            },
+            {
+                "name": "locked_asset_factory_address",
+                "type": "Address"
+            }
+        ],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "setCommunityDistribution",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "total_amount",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "spread_epoch",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setPerUserDistributedLockedAssets",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "spread_epoch",
+                    "type": "u64"
+                },
+                {
+                    "name": "user_locked_assets",
+                    "type": "variadic<multi<Address,BigUint>>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "claimLockedAssets",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "clearUnclaimableAssets",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "name": "undoLastCommunityDistribution",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "undoUserDistributedAssetsBetweenEpochs",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "lower",
+                    "type": "u64"
+                },
+                {
+                    "name": "higher",
+                    "type": "u64"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "name": "setUnlockPeriod",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "milestones",
+                    "type": "variadic<UnlockMilestone>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "calculateLockedAssets",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "deleteUserDistributedLockedAssets",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "spread_epoch",
+                    "type": "u64"
+                },
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getUsersDistributedLockedAssetsLength",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "name": "getUnlockPeriod",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "UnlockSchedule"
+                }
+            ]
+        },
+        {
+            "name": "getCommunityDistributionList",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "variadic<CommunityDistribution>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getAssetTokenId",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "name": "startGlobalOperation",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "endGlobalOperation",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        }
+    ],
+    "events": [],
+    "hasCallback": false,
+    "types": {
+        "CommunityDistribution": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "total_amount",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "spread_epoch",
+                    "type": "u64"
+                },
+                {
+                    "name": "after_planning_amount",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "UnlockMilestone": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "unlock_epoch",
+                    "type": "u64"
+                },
+                {
+                    "name": "unlock_percent",
+                    "type": "u8"
+                }
+            ]
+        },
+        "UnlockSchedule": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "unlock_milestones",
+                    "type": "List<UnlockMilestone>"
+                }
+            ]
+        }
+    }
+}

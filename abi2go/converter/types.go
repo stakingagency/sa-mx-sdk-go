@@ -68,6 +68,9 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 	case "u32":
 		return "uint32", nil
 
+	case "u8":
+		return "byte", nil
+
 	case "BigUint":
 		conv.imports["math/big"] = true
 

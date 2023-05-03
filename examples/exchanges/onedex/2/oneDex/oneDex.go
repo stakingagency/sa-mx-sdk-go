@@ -1,7 +1,6 @@
 package oneDex
 
 import (
-    "strings"
     "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
@@ -9,21 +8,12 @@ import (
     "encoding/binary"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/data"
+    "strings"
 )
 
 type Address []byte
 
 type TokenIdentifier string
-
-type ComplexType1 struct {
-    Var0 TokenIdentifier
-    Var1 TokenIdentifier
-}
-
-type ComplexType2 struct {
-    Var0 ComplexType1
-    Var1 uint32
-}
 
 type ComplexType3 struct {
     Var0 TokenIdentifier
@@ -43,6 +33,16 @@ type Pair struct {
     Second_token_reserve *big.Int
     Lp_token_supply *big.Int
     Lp_token_roles_are_set bool
+}
+
+type ComplexType1 struct {
+    Var0 TokenIdentifier
+    Var1 TokenIdentifier
+}
+
+type ComplexType2 struct {
+    Var0 ComplexType1
+    Var1 uint32
 }
 
 type State int
@@ -235,6 +235,7 @@ func (contract *OneDex) GetPairIds() ([]ComplexType2, error) {
         if !allOk {
             return nil, errors.New("invalid response")
         }
+
         Var0 := ComplexType1{
             Var0: TokenIdentifier(_Var0),
             Var1: TokenIdentifier(_Var1),
@@ -282,11 +283,11 @@ func (contract *OneDex) GetLpTokenPairIdMap() ([]ComplexType3, error) {
 }
 
 func (contract *OneDex) GetPairOwner(pair_id uint32) (Address, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairOwner", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairOwner", _args)
     if err != nil {
         return nil, err
     }
@@ -297,11 +298,11 @@ func (contract *OneDex) GetPairOwner(pair_id uint32) (Address, error) {
 }
 
 func (contract *OneDex) GetPairState(pair_id uint32) (State, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairState", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairState", _args)
     if err != nil {
         return 0, err
     }
@@ -312,11 +313,11 @@ func (contract *OneDex) GetPairState(pair_id uint32) (State, error) {
 }
 
 func (contract *OneDex) GetPairEnabled(pair_id uint32) (bool, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairEnabled", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairEnabled", _args)
     if err != nil {
         return false, err
     }
@@ -327,11 +328,11 @@ func (contract *OneDex) GetPairEnabled(pair_id uint32) (bool, error) {
 }
 
 func (contract *OneDex) GetPairFirstTokenId(pair_id uint32) (TokenIdentifier, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairFirstTokenId", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairFirstTokenId", _args)
     if err != nil {
         return "", err
     }
@@ -342,11 +343,11 @@ func (contract *OneDex) GetPairFirstTokenId(pair_id uint32) (TokenIdentifier, er
 }
 
 func (contract *OneDex) GetPairSecondTokenId(pair_id uint32) (TokenIdentifier, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairSecondTokenId", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairSecondTokenId", _args)
     if err != nil {
         return "", err
     }
@@ -357,11 +358,11 @@ func (contract *OneDex) GetPairSecondTokenId(pair_id uint32) (TokenIdentifier, e
 }
 
 func (contract *OneDex) GetPairFirstTokenReserve(pair_id uint32) (*big.Int, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairFirstTokenReserve", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairFirstTokenReserve", _args)
     if err != nil {
         return nil, err
     }
@@ -372,11 +373,11 @@ func (contract *OneDex) GetPairFirstTokenReserve(pair_id uint32) (*big.Int, erro
 }
 
 func (contract *OneDex) GetPairSecondTokenReserve(pair_id uint32) (*big.Int, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairSecondTokenReserve", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairSecondTokenReserve", _args)
     if err != nil {
         return nil, err
     }
@@ -387,11 +388,11 @@ func (contract *OneDex) GetPairSecondTokenReserve(pair_id uint32) (*big.Int, err
 }
 
 func (contract *OneDex) GetPairLpTokenId(pair_id uint32) (TokenIdentifier, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairLpTokenId", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairLpTokenId", _args)
     if err != nil {
         return "", err
     }
@@ -402,11 +403,11 @@ func (contract *OneDex) GetPairLpTokenId(pair_id uint32) (TokenIdentifier, error
 }
 
 func (contract *OneDex) GetPairLpTokenTotalSupply(pair_id uint32) (*big.Int, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairLpTokenTotalSupply", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairLpTokenTotalSupply", _args)
     if err != nil {
         return nil, err
     }
@@ -417,11 +418,11 @@ func (contract *OneDex) GetPairLpTokenTotalSupply(pair_id uint32) (*big.Int, err
 }
 
 func (contract *OneDex) GetEquivalent(token_in TokenIdentifier, token_out TokenIdentifier, amount_in *big.Int) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(token_in)))
-    args = append(args, hex.EncodeToString([]byte(token_out)))
-    args = append(args, hex.EncodeToString(amount_in.Bytes()))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getEquivalent", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(token_in)))
+    _args = append(_args, hex.EncodeToString([]byte(token_out)))
+    _args = append(_args, hex.EncodeToString(amount_in.Bytes()))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getEquivalent", _args)
     if err != nil {
         return nil, err
     }
@@ -432,12 +433,12 @@ func (contract *OneDex) GetEquivalent(token_in TokenIdentifier, token_out TokenI
 }
 
 func (contract *OneDex) GetMultiPathAmountOut(amount_in_arg *big.Int, path_args []TokenIdentifier) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(amount_in_arg.Bytes()))
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(amount_in_arg.Bytes()))
     for _, elem := range path_args {
-        args = append(args, hex.EncodeToString([]byte(elem)))
+        _args = append(_args, hex.EncodeToString([]byte(elem)))
     }
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountOut", args)
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountOut", _args)
     if err != nil {
         return nil, err
     }
@@ -448,11 +449,11 @@ func (contract *OneDex) GetMultiPathAmountOut(amount_in_arg *big.Int, path_args 
 }
 
 func (contract *OneDex) GetAmountOut(token_in TokenIdentifier, token_out TokenIdentifier, amount_in *big.Int) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(token_in)))
-    args = append(args, hex.EncodeToString([]byte(token_out)))
-    args = append(args, hex.EncodeToString(amount_in.Bytes()))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getAmountOut", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(token_in)))
+    _args = append(_args, hex.EncodeToString([]byte(token_out)))
+    _args = append(_args, hex.EncodeToString(amount_in.Bytes()))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getAmountOut", _args)
     if err != nil {
         return nil, err
     }
@@ -463,12 +464,12 @@ func (contract *OneDex) GetAmountOut(token_in TokenIdentifier, token_out TokenId
 }
 
 func (contract *OneDex) GetMultiPathAmountIn(amount_out_wanted *big.Int, path_args []TokenIdentifier) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(amount_out_wanted.Bytes()))
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(amount_out_wanted.Bytes()))
     for _, elem := range path_args {
-        args = append(args, hex.EncodeToString([]byte(elem)))
+        _args = append(_args, hex.EncodeToString([]byte(elem)))
     }
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountIn", args)
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountIn", _args)
     if err != nil {
         return nil, err
     }
@@ -479,11 +480,11 @@ func (contract *OneDex) GetMultiPathAmountIn(amount_out_wanted *big.Int, path_ar
 }
 
 func (contract *OneDex) GetAmountIn(token_in TokenIdentifier, token_wanted TokenIdentifier, amount_wanted *big.Int) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(token_in)))
-    args = append(args, hex.EncodeToString([]byte(token_wanted)))
-    args = append(args, hex.EncodeToString(amount_wanted.Bytes()))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getAmountIn", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(token_in)))
+    _args = append(_args, hex.EncodeToString([]byte(token_wanted)))
+    _args = append(_args, hex.EncodeToString(amount_wanted.Bytes()))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getAmountIn", _args)
     if err != nil {
         return nil, err
     }
@@ -530,6 +531,7 @@ func (contract *OneDex) ViewPairs() ([]Pair, error) {
         if !allOk {
             return nil, errors.New("invalid response")
         }
+
         _item := Pair{
             Pair_id: _Pair_id,
             State: State(_State),
@@ -551,11 +553,11 @@ func (contract *OneDex) ViewPairs() ([]Pair, error) {
 }
 
 func (contract *OneDex) ViewPair(pair_id uint32) (Pair, error) {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "viewPair", args)
+    _args = append(_args, hex.EncodeToString(bytes032))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "viewPair", _args)
     if err != nil {
         return Pair{}, err
     }
@@ -589,6 +591,7 @@ func (contract *OneDex) ViewPair(pair_id uint32) (Pair, error) {
     if !allOk {
         return Pair{}, errors.New("invalid response")
     }
+
     res0 := Pair{
         Pair_id: _Pair_id,
         State: State(_State),
@@ -609,26 +612,26 @@ func (contract *OneDex) ViewPair(pair_id uint32) (Pair, error) {
 
 // only owner
 func (contract *OneDex) SetConfig(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, wegld_token_id TokenIdentifier, usdc_token_id TokenIdentifier, busd_token_id TokenIdentifier, usdt_token_id TokenIdentifier, total_fee_percent uint64, special_fee_percent uint64, staking_reward_fee_percent uint64, treasury_address Address, staking_reward_address Address, burner_address Address, unwrap_address Address, registering_cost *big.Int) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(wegld_token_id)))
-    args = append(args, hex.EncodeToString([]byte(usdc_token_id)))
-    args = append(args, hex.EncodeToString([]byte(busd_token_id)))
-    args = append(args, hex.EncodeToString([]byte(usdt_token_id)))
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(wegld_token_id)))
+    _args = append(_args, hex.EncodeToString([]byte(usdc_token_id)))
+    _args = append(_args, hex.EncodeToString([]byte(busd_token_id)))
+    _args = append(_args, hex.EncodeToString([]byte(usdt_token_id)))
     bytes464 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes464, total_fee_percent)
-    args = append(args, hex.EncodeToString(bytes464))
+    _args = append(_args, hex.EncodeToString(bytes464))
     bytes564 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes564, special_fee_percent)
-    args = append(args, hex.EncodeToString(bytes564))
+    _args = append(_args, hex.EncodeToString(bytes564))
     bytes664 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes664, staking_reward_fee_percent)
-    args = append(args, hex.EncodeToString(bytes664))
-    args = append(args, hex.EncodeToString(treasury_address))
-    args = append(args, hex.EncodeToString(staking_reward_address))
-    args = append(args, hex.EncodeToString(burner_address))
-    args = append(args, hex.EncodeToString(unwrap_address))
-    args = append(args, hex.EncodeToString(registering_cost.Bytes()))
-    dataField := "setConfig" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes664))
+    _args = append(_args, hex.EncodeToString(treasury_address))
+    _args = append(_args, hex.EncodeToString(staking_reward_address))
+    _args = append(_args, hex.EncodeToString(burner_address))
+    _args = append(_args, hex.EncodeToString(unwrap_address))
+    _args = append(_args, hex.EncodeToString(registering_cost.Bytes()))
+    dataField := "setConfig" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -644,11 +647,11 @@ func (contract *OneDex) SetConfig(_pk []byte, _value float64, _gasLimit uint64, 
 
 // only owner
 func (contract *OneDex) SetTotalFeePercent(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, total_fee_percent uint64) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes064 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes064, total_fee_percent)
-    args = append(args, hex.EncodeToString(bytes064))
-    dataField := "setTotalFeePercent" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes064))
+    dataField := "setTotalFeePercent" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -664,11 +667,11 @@ func (contract *OneDex) SetTotalFeePercent(_pk []byte, _value float64, _gasLimit
 
 // only owner
 func (contract *OneDex) SetSpecialFeePercent(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, special_fee_percent uint64) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes064 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes064, special_fee_percent)
-    args = append(args, hex.EncodeToString(bytes064))
-    dataField := "setSpecialFeePercent" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes064))
+    dataField := "setSpecialFeePercent" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -684,11 +687,11 @@ func (contract *OneDex) SetSpecialFeePercent(_pk []byte, _value float64, _gasLim
 
 // only owner
 func (contract *OneDex) SetStakingRewardFeePercent(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, staking_reward_fee_percent uint64) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes064 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes064, staking_reward_fee_percent)
-    args = append(args, hex.EncodeToString(bytes064))
-    dataField := "setStakingRewardFeePercent" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes064))
+    dataField := "setStakingRewardFeePercent" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -704,9 +707,9 @@ func (contract *OneDex) SetStakingRewardFeePercent(_pk []byte, _value float64, _
 
 // only owner
 func (contract *OneDex) SetStakingRewardAddress(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, staking_reward_address Address) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(staking_reward_address))
-    dataField := "setStakingRewardAddress" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(staking_reward_address))
+    dataField := "setStakingRewardAddress" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -722,9 +725,9 @@ func (contract *OneDex) SetStakingRewardAddress(_pk []byte, _value float64, _gas
 
 // only owner
 func (contract *OneDex) SetTreasuryAddress(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, treasury_address Address) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(treasury_address))
-    dataField := "setTreasuryAddress" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(treasury_address))
+    dataField := "setTreasuryAddress" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -740,9 +743,9 @@ func (contract *OneDex) SetTreasuryAddress(_pk []byte, _value float64, _gasLimit
 
 // only owner
 func (contract *OneDex) SetBurnerAddress(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, burner_address Address) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(burner_address))
-    dataField := "setBurnerAddress" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(burner_address))
+    dataField := "setBurnerAddress" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -758,9 +761,9 @@ func (contract *OneDex) SetBurnerAddress(_pk []byte, _value float64, _gasLimit u
 
 // only owner
 func (contract *OneDex) SetUnwrapAddress(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, unwrap_address Address) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(unwrap_address))
-    dataField := "setUnwrapAddress" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(unwrap_address))
+    dataField := "setUnwrapAddress" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -776,9 +779,9 @@ func (contract *OneDex) SetUnwrapAddress(_pk []byte, _value float64, _gasLimit u
 
 // only owner
 func (contract *OneDex) SetRegisteringCost(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, registering_cost *big.Int) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(registering_cost.Bytes()))
-    dataField := "setRegisteringCost" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(registering_cost.Bytes()))
+    dataField := "setRegisteringCost" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -793,11 +796,11 @@ func (contract *OneDex) SetRegisteringCost(_pk []byte, _value float64, _gasLimit
 }
 
 func (contract *OneDex) EnableSwap(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "enableSwap" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "enableSwap" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -812,10 +815,10 @@ func (contract *OneDex) EnableSwap(_pk []byte, _value float64, _gasLimit uint64,
 }
 
 func (contract *OneDex) CreatePair(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, first_token_id TokenIdentifier, second_token_id TokenIdentifier) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(first_token_id)))
-    args = append(args, hex.EncodeToString([]byte(second_token_id)))
-    dataField := "createPair" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(first_token_id)))
+    _args = append(_args, hex.EncodeToString([]byte(second_token_id)))
+    dataField := "createPair" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -830,11 +833,11 @@ func (contract *OneDex) CreatePair(_pk []byte, _value float64, _gasLimit uint64,
 }
 
 func (contract *OneDex) IssueLpToken(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "issueLpToken" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "issueLpToken" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -849,11 +852,11 @@ func (contract *OneDex) IssueLpToken(_pk []byte, _value float64, _gasLimit uint6
 }
 
 func (contract *OneDex) SetLpTokenLocalRoles(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "setLpTokenLocalRoles" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "setLpTokenLocalRoles" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -869,11 +872,11 @@ func (contract *OneDex) SetLpTokenLocalRoles(_pk []byte, _value float64, _gasLim
 
 // only owner
 func (contract *OneDex) SetPairActive(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "setPairActive" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "setPairActive" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -889,11 +892,11 @@ func (contract *OneDex) SetPairActive(_pk []byte, _value float64, _gasLimit uint
 
 // only owner
 func (contract *OneDex) SetPairActiveButNoSwap(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "setPairActiveButNoSwap" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "setPairActiveButNoSwap" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -909,11 +912,11 @@ func (contract *OneDex) SetPairActiveButNoSwap(_pk []byte, _value float64, _gasL
 
 // only owner
 func (contract *OneDex) SetPairInactive(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, pair_id uint32) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes032 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes032, pair_id)
-    args = append(args, hex.EncodeToString(bytes032))
-    dataField := "setPairInactive" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes032))
+    dataField := "setPairInactive" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -943,10 +946,10 @@ func (contract *OneDex) AddInitialLiquidity(_pk []byte, _value float64, _gasLimi
 }
 
 func (contract *OneDex) AddLiquidity(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, first_token_amount_min *big.Int, second_token_amount_min *big.Int) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(first_token_amount_min.Bytes()))
-    args = append(args, hex.EncodeToString(second_token_amount_min.Bytes()))
-    dataField := hex.EncodeToString([]byte("addLiquidity")) + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(first_token_amount_min.Bytes()))
+    _args = append(_args, hex.EncodeToString(second_token_amount_min.Bytes()))
+    dataField := hex.EncodeToString([]byte("addLiquidity")) + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
     if err != nil {
         return err
@@ -961,11 +964,11 @@ func (contract *OneDex) AddLiquidity(_pk []byte, _value float64, _gasLimit uint6
 }
 
 func (contract *OneDex) RemoveLiquidity(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, first_token_amount_min *big.Int, second_token_amount_min *big.Int, unwrap_required bool) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(first_token_amount_min.Bytes()))
-    args = append(args, hex.EncodeToString(second_token_amount_min.Bytes()))
-    if unwrap_required {args = append(args, "01") } else {args = append(args, "00")}
-    dataField := hex.EncodeToString([]byte("removeLiquidity")) + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(first_token_amount_min.Bytes()))
+    _args = append(_args, hex.EncodeToString(second_token_amount_min.Bytes()))
+    if unwrap_required {_args = append(_args, "01") } else {_args = append(_args, "00")}
+    dataField := hex.EncodeToString([]byte("removeLiquidity")) + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
     if err != nil {
         return err
@@ -980,13 +983,13 @@ func (contract *OneDex) RemoveLiquidity(_pk []byte, _value float64, _gasLimit ui
 }
 
 func (contract *OneDex) SwapMultiTokensFixedInput(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, amount_out_min *big.Int, unwrap_required bool, path_args []TokenIdentifier) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(amount_out_min.Bytes()))
-    if unwrap_required {args = append(args, "01") } else {args = append(args, "00")}
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(amount_out_min.Bytes()))
+    if unwrap_required {_args = append(_args, "01") } else {_args = append(_args, "00")}
     for _, elem := range path_args {
-        args = append(args, hex.EncodeToString([]byte(elem)))
+        _args = append(_args, hex.EncodeToString([]byte(elem)))
     }
-    dataField := hex.EncodeToString([]byte("swapMultiTokensFixedInput")) + "@" + strings.Join(args, "@")
+    dataField := hex.EncodeToString([]byte("swapMultiTokensFixedInput")) + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
     if err != nil {
         return err
@@ -1001,13 +1004,13 @@ func (contract *OneDex) SwapMultiTokensFixedInput(_pk []byte, _value float64, _g
 }
 
 func (contract *OneDex) SwapMultiTokensFixedOutput(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, amount_out_wanted *big.Int, unwrap_required bool, path_args []TokenIdentifier) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(amount_out_wanted.Bytes()))
-    if unwrap_required {args = append(args, "01") } else {args = append(args, "00")}
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(amount_out_wanted.Bytes()))
+    if unwrap_required {_args = append(_args, "01") } else {_args = append(_args, "00")}
     for _, elem := range path_args {
-        args = append(args, hex.EncodeToString([]byte(elem)))
+        _args = append(_args, hex.EncodeToString([]byte(elem)))
     }
-    dataField := hex.EncodeToString([]byte("swapMultiTokensFixedOutput")) + "@" + strings.Join(args, "@")
+    dataField := hex.EncodeToString([]byte("swapMultiTokensFixedOutput")) + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
     if err != nil {
         return err

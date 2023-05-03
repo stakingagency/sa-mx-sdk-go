@@ -1,28 +1,28 @@
 package salsaContract
 
 import (
-    "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
     "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
     "encoding/binary"
+    "math/big"
 )
 
 type TokenIdentifier string
 
 type Address []byte
 
+type Undelegation struct {
+    Amount *big.Int
+    Unbond_epoch uint64
+}
+
 type EsdtTokenPayment struct {
     Token_identifier TokenIdentifier
     Token_nonce uint64
     Amount *big.Int
-}
-
-type Undelegation struct {
-    Amount *big.Int
-    Unbond_epoch uint64
 }
 
 type State int
@@ -99,9 +99,9 @@ func (contract *SalsaContract) GetProviderAddress() (Address, error) {
 }
 
 func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegation, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(user))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserUndelegations", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(user))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserUndelegations", _args)
     if err != nil {
         return nil, err
     }
@@ -119,6 +119,7 @@ func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegatio
         if !allOk {
             break
         }
+
         _item := Undelegation{
             Amount: _Amount,
             Unbond_epoch: _Unbond_epoch,
@@ -192,6 +193,7 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
         if !allOk {
             break
         }
+
         _item := Undelegation{
             Amount: _Amount,
             Unbond_epoch: _Unbond_epoch,
@@ -203,9 +205,9 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
 }
 
 func (contract *SalsaContract) GetReserverID(user Address) (uint32, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(user))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReserverID", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(user))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReserverID", _args)
     if err != nil {
         return 0, err
     }
@@ -231,9 +233,9 @@ func (contract *SalsaContract) GetUsersReserves() ([]*big.Int, error) {
 }
 
 func (contract *SalsaContract) GetUserReserveByAddress(user Address) (*big.Int, error) {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(user))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserReserveByAddress", args)
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(user))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserReserveByAddress", _args)
     if err != nil {
         return nil, err
     }
@@ -326,9 +328,9 @@ func (contract *SalsaContract) AddReserve(_pk []byte, _value float64, _gasLimit 
 }
 
 func (contract *SalsaContract) RemoveReserve(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, amount *big.Int) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(amount.Bytes()))
-    dataField := "removeReserve" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(amount.Bytes()))
+    dataField := "removeReserve" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -404,13 +406,13 @@ func (contract *SalsaContract) WithdrawAll(_pk []byte, _value float64, _gasLimit
 
 // only owner
 func (contract *SalsaContract) RegisterLiquidToken(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, token_display_name string, token_ticker string, num_decimals uint32) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString([]byte(token_display_name)))
-    args = append(args, hex.EncodeToString([]byte(token_ticker)))
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString([]byte(token_display_name)))
+    _args = append(_args, hex.EncodeToString([]byte(token_ticker)))
     bytes232 := make([]byte, 4)
     binary.BigEndian.PutUint32(bytes232, num_decimals)
-    args = append(args, hex.EncodeToString(bytes232))
-    dataField := "registerLiquidToken" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes232))
+    dataField := "registerLiquidToken" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -458,9 +460,9 @@ func (contract *SalsaContract) SetStateInactive(_pk []byte, _value float64, _gas
 
 // only owner
 func (contract *SalsaContract) SetProviderAddress(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, address Address) error {
-    args := make([]string, 0)
-    args = append(args, hex.EncodeToString(address))
-    dataField := "setProviderAddress" + "@" + strings.Join(args, "@")
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(address))
+    dataField := "setProviderAddress" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -476,11 +478,11 @@ func (contract *SalsaContract) SetProviderAddress(_pk []byte, _value float64, _g
 
 // only owner
 func (contract *SalsaContract) SetUndelegateNowFee(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, new_fee uint64) error {
-    args := make([]string, 0)
+    _args := make([]string, 0)
     bytes064 := make([]byte, 8)
     binary.BigEndian.PutUint64(bytes064, new_fee)
-    args = append(args, hex.EncodeToString(bytes064))
-    dataField := "setUndelegateNowFee" + "@" + strings.Join(args, "@")
+    _args = append(_args, hex.EncodeToString(bytes064))
+    dataField := "setUndelegateNowFee" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err

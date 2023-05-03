@@ -1,0 +1,783 @@
+{
+    "buildInfo": {
+        "rustc": {
+            "version": "1.70.0-nightly",
+            "commitHash": "cf7ada217c8ac63367b184afd9fffaff30f6ed44",
+            "commitDate": "2023-04-03",
+            "channel": "Nightly",
+            "short": "rustc 1.70.0-nightly (cf7ada217 2023-04-03)"
+        },
+        "contractCrate": {
+            "name": "governance-v2",
+            "version": "0.0.0",
+            "gitVersion": "v1.6.0-1266-g30817f6c"
+        },
+        "framework": {
+            "name": "multiversx-sc",
+            "version": "0.39.4"
+        }
+    },
+    "docs": [
+        "An empty contract. To be used as a template when starting a new contract from scratch."
+    ],
+    "name": "GovernanceV2",
+    "constructor": {
+        "docs": [
+            "- `min_energy_for_propose` - the minimum energy required for submitting a proposal",
+            "- `quorum` - the minimum number of (`votes` minus `downvotes`) at the end of voting period  ",
+            "- `maxActionsPerProposal` - Maximum number of actions (transfers and/or smart contract calls) that a proposal may have  ",
+            "- `votingDelayInBlocks` - Number of blocks to wait after a block is proposed before being able to vote/downvote that proposal",
+            "- `votingPeriodInBlocks` - Number of blocks the voting period lasts (voting delay does not count towards this)  ",
+            "- `lockTimeAfterVotingEndsInBlocks` - Number of blocks to wait before a successful proposal can be executed  "
+        ],
+        "inputs": [
+            {
+                "name": "min_energy_for_propose",
+                "type": "BigUint"
+            },
+            {
+                "name": "min_fee_for_propose",
+                "type": "BigUint"
+            },
+            {
+                "name": "quorum",
+                "type": "BigUint"
+            },
+            {
+                "name": "voting_delay_in_blocks",
+                "type": "u64"
+            },
+            {
+                "name": "voting_period_in_blocks",
+                "type": "u64"
+            },
+            {
+                "name": "lock_time_after_voting_ends_in_blocks",
+                "type": "u64"
+            },
+            {
+                "name": "energy_factory_address",
+                "type": "Address"
+            }
+        ],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "docs": [
+                "Propose a list of actions.",
+                "A maximum of MAX_GOVERNANCE_PROPOSAL_ACTIONS can be proposed at a time.",
+                "",
+                "An action has the following format:",
+                "    - gas limit for action execution",
+                "    - destination address",
+                "    - a fee payment for proposal (if smaller than min_fee_for_propose, state: WaitForFee)",
+                "    - endpoint to be called on the destination",
+                "    - a vector of arguments for the endpoint, in the form of ManagedVec<ManagedBuffer>",
+                "",
+                "The proposer's energy is NOT automatically used for voting. A separate vote is needed.",
+                "",
+                "Returns the ID of the newly created proposal."
+            ],
+            "name": "propose",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "description",
+                    "type": "bytes"
+                },
+                {
+                    "name": "actions",
+                    "type": "variadic<multi<u64,Address,bytes,List<bytes>>>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "u32"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Vote on a proposal. The voting power depends on the user's energy."
+            ],
+            "name": "vote",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                },
+                {
+                    "name": "vote",
+                    "type": "VoteType"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Queue a proposal for execution.",
+                "This can be done only if the proposal has reached the quorum.",
+                "A proposal is considered successful and ready for queing if",
+                "total_votes + total_downvotes >= quorum && total_votes > total_downvotes",
+                "i.e. at least 50% + 1 of the people voted \"yes\".",
+                "",
+                "Additionally, all the required payments must be deposited before calling this endpoint."
+            ],
+            "name": "queue",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Execute a previously queued proposal.",
+                "This will also clear the proposal from storage."
+            ],
+            "name": "execute",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Cancel a proposed action. This can be done:",
+                "- by the proposer, at any time",
+                "- by anyone, if the proposal was defeated"
+            ],
+            "name": "cancel",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeMinEnergyForProposal",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeMinFeeForProposal",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeQuorum",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeVotingDelayInBlocks",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeVotingPeriodInBlocks",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "changeLockTimeAfterVotingEndsInBlocks",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "new_value",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getMinEnergyForPropose",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getMinFeeForPropose",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getQuorum",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getVotingDelayInBlocks",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getVotingPeriodInBlocks",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getLockTimeAfterVotingEndsInBlocks",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u64"
+                }
+            ]
+        },
+        {
+            "name": "getFeeTokenId",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "TokenIdentifier"
+                }
+            ]
+        },
+        {
+            "name": "getProposalVotes",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "ProposalVotes"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Used to deposit tokens to gather threshold min_fee.",
+                "Funds will be returned if the proposal is canceled."
+            ],
+            "name": "depositTokensForProposal",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "Used to claim deposited tokens to gather threshold min_fee."
+            ],
+            "name": "claimDepositedTokens",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        },
+        {
+            "name": "getProposalStatus",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "GovernanceProposalStatus"
+                }
+            ]
+        },
+        {
+            "name": "getProposer",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "optional<Address>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getProposalDescription",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "optional<bytes>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getProposalActions",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "List<GovernanceAction>"
+                }
+            ]
+        },
+        {
+            "name": "setEnergyFactoryAddress",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "sc_address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getEnergyFactoryAddress",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "Address"
+                }
+            ]
+        }
+    ],
+    "events": [
+        {
+            "identifier": "proposalCreated",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "proposer",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "start_block",
+                    "type": "u64",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal",
+                    "type": "GovernanceProposal"
+                }
+            ]
+        },
+        {
+            "identifier": "upVoteCast",
+            "inputs": [
+                {
+                    "name": "up_voter",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "nr_votes",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "identifier": "downVoteCast",
+            "inputs": [
+                {
+                    "name": "down_voter",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "nr_downvotes",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "identifier": "downVetoVoteCast",
+            "inputs": [
+                {
+                    "name": "down_veto_voter",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "nr_downvotes",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "identifier": "abstainVoteCast",
+            "inputs": [
+                {
+                    "name": "abstain_voter",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "nr_downvotes",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "identifier": "proposalCanceled",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "proposalQueued",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "queued_block",
+                    "type": "u64",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "proposalExecuted",
+            "inputs": [
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "identifier": "userDeposit",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "payment",
+                    "type": "EsdtTokenPayment"
+                }
+            ]
+        },
+        {
+            "identifier": "userClaimDepositedTokens",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address",
+                    "indexed": true
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "u32",
+                    "indexed": true
+                },
+                {
+                    "name": "payments",
+                    "type": "List<EsdtTokenPayment>"
+                }
+            ]
+        }
+    ],
+    "hasCallback": false,
+    "types": {
+        "EsdtTokenPayment": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "token_identifier",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token_nonce",
+                    "type": "u64"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "FeeEntry": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "depositor_addr",
+                    "type": "Address"
+                },
+                {
+                    "name": "tokens",
+                    "type": "EsdtTokenPayment"
+                }
+            ]
+        },
+        "GovernanceAction": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "gas_limit",
+                    "type": "u64"
+                },
+                {
+                    "name": "dest_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "function_name",
+                    "type": "bytes"
+                },
+                {
+                    "name": "arguments",
+                    "type": "List<bytes>"
+                }
+            ]
+        },
+        "GovernanceProposal": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "proposer",
+                    "type": "Address"
+                },
+                {
+                    "name": "actions",
+                    "type": "List<GovernanceAction>"
+                },
+                {
+                    "name": "description",
+                    "type": "bytes"
+                },
+                {
+                    "name": "fees",
+                    "type": "ProposalFees"
+                }
+            ]
+        },
+        "GovernanceProposalStatus": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "None",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Pending",
+                    "discriminant": 1
+                },
+                {
+                    "name": "Active",
+                    "discriminant": 2
+                },
+                {
+                    "name": "Defeated",
+                    "discriminant": 3
+                },
+                {
+                    "name": "Succeeded",
+                    "discriminant": 4
+                },
+                {
+                    "name": "Queued",
+                    "discriminant": 5
+                },
+                {
+                    "name": "WaitingForFees",
+                    "discriminant": 6
+                }
+            ]
+        },
+        "ProposalFees": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "total_amount",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "entries",
+                    "type": "List<FeeEntry>"
+                }
+            ]
+        },
+        "ProposalVotes": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "up_votes",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "down_votes",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "down_veto_votes",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "abstain_votes",
+                    "type": "BigUint"
+                }
+            ]
+        },
+        "VoteType": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "UpVote",
+                    "discriminant": 0
+                },
+                {
+                    "name": "DownVote",
+                    "discriminant": 1
+                },
+                {
+                    "name": "DownVetoVote",
+                    "discriminant": 2
+                },
+                {
+                    "name": "AbstainVote",
+                    "discriminant": 3
+                }
+            ]
+        }
+    }
+}

@@ -58,7 +58,7 @@ func (conv *AbiConverter) generateMutableBody(endpoint data.AbiEndpoint) ([]stri
 		inputArgs = append(inputArgs, inputArg...)
 	}
 	if len(inputArgs) > 0 {
-		lines = append(lines, "    args := make([]string, 0)")
+		lines = append(lines, "    _args := make([]string, 0)")
 	}
 	for _, arg := range inputArgs {
 		lines = append(lines, "    "+arg)
@@ -74,7 +74,7 @@ func (conv *AbiConverter) generateMutableBody(endpoint data.AbiEndpoint) ([]stri
 	}
 	if len(inputArgs) > 0 {
 		conv.imports["strings"] = true
-		line += " + \"@\" + strings.Join(args, \"@\")"
+		line += " + \"@\" + strings.Join(_args, \"@\")"
 	}
 	lines = append(lines, line)
 
