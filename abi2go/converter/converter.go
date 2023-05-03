@@ -11,14 +11,14 @@ type AbiConverter struct {
 	abi          *data.ABI
 	imports      map[string]bool
 	customTypes  map[string]bool
-	complexTypes map[string]map[string]string
+	complexTypes map[string][][2]string
 }
 
 func NewAbiConverter(fileName string) (*AbiConverter, error) {
 	converter := &AbiConverter{
 		imports:      make(map[string]bool),
 		customTypes:  make(map[string]bool),
-		complexTypes: make(map[string]map[string]string),
+		complexTypes: make(map[string][][2]string),
 	}
 	abi, err := converter.loadAbiFile(fileName)
 	if err != nil {

@@ -120,50 +120,27 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		return innerType, nil
 	}
 
-	if utils.IsMultiVariadic(abiType) {
+	if utils.IsMultiVariadic(abiType) || utils.IsMulti(abiType) {
 		idx := strings.Index(abiType, "<")
 		innerTypes := string([]byte(abiType)[idx+1:])
 		innerTypes = strings.TrimSuffix(innerTypes, ">")
-		idx = strings.Index(innerTypes, "<")
-		innerTypes = string([]byte(innerTypes)[idx+1:])
-		innerTypes = strings.TrimSuffix(innerTypes, ">")
+		if utils.IsMultiVariadic(abiType) {
+			idx = strings.Index(innerTypes, "<")
+			innerTypes = string([]byte(innerTypes)[idx+1:])
+			innerTypes = strings.TrimSuffix(innerTypes, ">")
+		}
 
-		mapTypes := strings.Split(innerTypes, ",")
-		n := len(mapTypes)
-		if n < 2 {
+		mapTypes := utils.SplitTypes(innerTypes)
+		if len(mapTypes) < 2 {
 			return "", errors.ErrUnknownAbiFieldType
 		}
 
-		idx = 1
-		for {
-			if strings.Contains(mapTypes[idx], ">") {
-				mapTypes[idx-1] += "," + mapTypes[idx]
-				mapTypes = append(mapTypes[:idx], mapTypes[idx+1:]...)
-				idx = 0
-				n--
-			}
-			idx++
-			if idx >= n {
-				break
-			}
-		}
-		if n != 2 {
-			return "", errors.ErrUnknownAbiFieldType
-		}
-
-		innerGoType1, err := conv.abiType2goType(mapTypes[0])
+		typeName, err := conv.getOrCreateComplexType(mapTypes)
 		if err != nil {
-			return "", errors.ErrUnknownAbiFieldType
+			return "", err
 		}
 
-		innerGoType2, err := conv.abiType2goType(mapTypes[1])
-		if err != nil {
-			return "", errors.ErrUnknownAbiFieldType
-		}
-
-		innerType := "map[" + innerGoType1 + "]" + innerGoType2
-
-		return innerType, nil
+		return "[]" + typeName, nil
 	}
 
 	if utils.IsTuple(abiType) {
@@ -171,41 +148,46 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		innerTypes := string([]byte(abiType)[idx+1:])
 		innerTypes = strings.TrimSuffix(innerTypes, ">")
 
-		tupleMembers := strings.Split(innerTypes, ",")
-		complexType := make(map[string]string)
-		for i, tupleMember := range tupleMembers {
-			innerGoType, err := conv.abiType2goType(tupleMember)
-			if err != nil {
-				return "", err
-			}
-
-			variable := fmt.Sprintf("var%v", i)
-			complexType[variable] = innerGoType
-		}
-		found := false
-		typeName := fmt.Sprintf("ComplexType%v", len(conv.complexTypes))
-		for existingName, existingType := range conv.complexTypes {
-			if len(complexType) == len(existingType) {
-				identical := true
-				for n, t := range complexType {
-					if existingType[n] != t {
-						identical = false
-					}
-				}
-				if identical {
-					found = true
-					typeName = existingName
-				}
-			}
-		}
-		if !found {
-			conv.complexTypes[typeName] = complexType
+		tupleMembers := utils.SplitTypes(innerTypes)
+		typeName, err := conv.getOrCreateComplexType(tupleMembers)
+		if err != nil {
+			return "", err
 		}
 
 		return typeName, nil
 	}
 
 	return "", errors.ErrUnknownAbiFieldType
+}
+
+func (conv *AbiConverter) getOrCreateComplexType(tupleMembers []string) (string, error) {
+	complexType := make([][2]string, 0)
+	for i, tupleMember := range tupleMembers {
+		innerGoType, err := conv.abiType2goType(tupleMember)
+		if err != nil {
+			return "", err
+		}
+
+		variable := fmt.Sprintf("Var%v", i)
+		complexType = append(complexType, [2]string{variable, innerGoType})
+	}
+	for existingName, existingType := range conv.complexTypes {
+		if len(complexType) == len(existingType) {
+			identical := true
+			for i, newType := range complexType {
+				if existingType[i][0] != newType[0] || existingType[i][1] != newType[1] {
+					identical = false
+				}
+			}
+			if identical {
+				return existingName, nil
+			}
+		}
+	}
+	typeName := fmt.Sprintf("ComplexType%v", len(conv.complexTypes))
+	conv.complexTypes[typeName] = complexType
+
+	return typeName, nil
 }
 
 func (conv *AbiConverter) appendContractType(lines *[]string) {

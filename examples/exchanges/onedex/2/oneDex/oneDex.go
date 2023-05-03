@@ -1,8 +1,8 @@
 package oneDex
 
 import (
-    "encoding/binary"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
+    "encoding/binary"
     "encoding/hex"
     "errors"
     "github.com/stakingagency/sa-mx-sdk-go/data"
@@ -16,8 +16,18 @@ type Address []byte
 type TokenIdentifier string
 
 type ComplexType0 struct {
-    var0 TokenIdentifier
-    var1 TokenIdentifier
+    Var0 TokenIdentifier
+    Var1 TokenIdentifier
+}
+
+type ComplexType1 struct {
+    Var0 ComplexType0
+    Var1 uint32
+}
+
+type ComplexType2 struct {
+    Var0 TokenIdentifier
+    Var1 uint32
 }
 
 type Pair struct {
@@ -208,29 +218,33 @@ func (contract *OneDex) GetPaused() (bool, error) {
     return res0, nil
 }
 
-func (contract *OneDex) GetPairIds() (map[ComplexType0]uint32, error) {
+func (contract *OneDex) GetPairIds() ([]ComplexType1, error) {
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairIds", nil)
     if err != nil {
         return nil, err
     }
 
-    res0 := make(map[ComplexType0]uint32)
+    res0 := make([]ComplexType1, 0)
     for i := 0; i < len(res.Data.ReturnData); i+=2 {
         idx := 0
         ok, allOk := true, true
-        _var0, idx, ok := utils.ParseString(res.Data.ReturnData[i], idx)
+        _Var0Var0, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
         allOk = allOk && ok
-        _var1, idx, ok := utils.ParseString(res.Data.ReturnData[i], idx)
+        _Var0Var1, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
         allOk = allOk && ok
         if !allOk {
             continue
         }
-        inner0 := ComplexType0{
-            var0: TokenIdentifier(_var0),
-            var1: TokenIdentifier(_var1),
+        Var0 := ComplexType0{
+            Var0: TokenIdentifier(_Var0Var0),
+            Var1: TokenIdentifier(_Var0Var1),
         }
-        outer0 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
-        res0[inner0] = outer0
+        Var1 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
+        inner := ComplexType1{
+            Var0: Var0,
+            Var1: Var1,
+        }
+        res0 = append(res0, inner)
     }
 
     return res0, nil
@@ -247,17 +261,21 @@ func (contract *OneDex) GetLastPairId() (uint32, error) {
     return res0, nil
 }
 
-func (contract *OneDex) GetLpTokenPairIdMap() (map[TokenIdentifier]uint32, error) {
+func (contract *OneDex) GetLpTokenPairIdMap() ([]ComplexType2, error) {
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getLpTokenPairIdMap", nil)
     if err != nil {
         return nil, err
     }
 
-    res0 := make(map[TokenIdentifier]uint32)
+    res0 := make([]ComplexType2, 0)
     for i := 0; i < len(res.Data.ReturnData); i+=2 {
-        inner0 := TokenIdentifier(res.Data.ReturnData[i])
-        outer0 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
-        res0[inner0] = outer0
+        Var0 := TokenIdentifier(res.Data.ReturnData[i+0])
+        Var1 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
+        inner := ComplexType2{
+            Var0: Var0,
+            Var1: Var1,
+        }
+        res0 = append(res0, inner)
     }
 
     return res0, nil
@@ -417,7 +435,7 @@ func (contract *OneDex) GetMultiPathAmountOut(amount_in_arg *big.Int, path_args 
     args := make([]string, 0)
     args = append(args, hex.EncodeToString(amount_in_arg.Bytes()))
     for _, elem := range path_args {
-    args = append(args, hex.EncodeToString([]byte(elem)))
+        args = append(args, hex.EncodeToString([]byte(elem)))
     }
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountOut", args)
     if err != nil {
@@ -448,7 +466,7 @@ func (contract *OneDex) GetMultiPathAmountIn(amount_out_wanted *big.Int, path_ar
     args := make([]string, 0)
     args = append(args, hex.EncodeToString(amount_out_wanted.Bytes()))
     for _, elem := range path_args {
-    args = append(args, hex.EncodeToString([]byte(elem)))
+        args = append(args, hex.EncodeToString([]byte(elem)))
     }
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getMultiPathAmountIn", args)
     if err != nil {
@@ -966,7 +984,7 @@ func (contract *OneDex) SwapMultiTokensFixedInput(_pk []byte, _value float64, _g
     args = append(args, hex.EncodeToString(amount_out_min.Bytes()))
     if unwrap_required {args = append(args, "01") } else {args = append(args, "00")}
     for _, elem := range path_args {
-    args = append(args, hex.EncodeToString([]byte(elem)))
+        args = append(args, hex.EncodeToString([]byte(elem)))
     }
     dataField := hex.EncodeToString([]byte("swapMultiTokensFixedInput")) + "@" + strings.Join(args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
@@ -987,7 +1005,7 @@ func (contract *OneDex) SwapMultiTokensFixedOutput(_pk []byte, _value float64, _
     args = append(args, hex.EncodeToString(amount_out_wanted.Bytes()))
     if unwrap_required {args = append(args, "01") } else {args = append(args, "00")}
     for _, elem := range path_args {
-    args = append(args, hex.EncodeToString([]byte(elem)))
+        args = append(args, hex.EncodeToString([]byte(elem)))
     }
     dataField := hex.EncodeToString([]byte("swapMultiTokensFixedOutput")) + "@" + strings.Join(args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)

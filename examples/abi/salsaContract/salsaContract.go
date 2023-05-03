@@ -1,13 +1,13 @@
 package salsaContract
 
 import (
+    "github.com/stakingagency/sa-mx-sdk-go/data"
+    "strings"
+    "encoding/binary"
+    "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
-    "encoding/binary"
-    "github.com/stakingagency/sa-mx-sdk-go/data"
-    "strings"
-    "math/big"
 )
 
 type TokenIdentifier string

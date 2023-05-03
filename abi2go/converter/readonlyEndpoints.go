@@ -80,6 +80,8 @@ func (conv *AbiConverter) generateImports() ([]string, error) {
 				lines = append(lines, "type TokenIdentifier string")
 			case "EgldOrEsdtTokenIdentifier":
 				lines = append(lines, "type EgldOrEsdtTokenIdentifier string")
+			case "EsdtLocalRole":
+				lines = append(lines, "type EsdtLocalRole byte")
 			}
 			lines = append(lines, "")
 		}
@@ -88,7 +90,9 @@ func (conv *AbiConverter) generateImports() ([]string, error) {
 	if len(conv.complexTypes) > 0 {
 		for name, fields := range conv.complexTypes {
 			lines = append(lines, fmt.Sprintf("type %s struct {", name))
-			for fieldName, fieldType := range fields {
+			for _, field := range fields {
+				fieldName := field[0]
+				fieldType := field[1]
 				lines = append(lines, fmt.Sprintf("    %s %s", fieldName, fieldType))
 			}
 			lines = append(lines, "}")
@@ -140,7 +144,7 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 
 	// set output values
 	for i, output := range endpoint.Outputs {
-		if utils.IsMultiVariadic(output.Type) {
+		if utils.IsMultiVariadic(output.Type) || utils.IsMulti(output.Type) {
 			setMultiVariadic, err := conv.setMultiVariadicOutput(i, output)
 			if err != nil {
 				return nil, err
@@ -193,109 +197,94 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 func (conv *AbiConverter) setMultiVariadicOutput(i int, output data.AbiEndpointIO) ([]string, error) {
 	lines := make([]string, 0)
 	goType, _ := conv.abiType2goType(output.Type)
-	if !strings.HasPrefix(goType, "map[") || !strings.Contains(goType, "]") {
+	if !strings.HasPrefix(goType, "[]") {
 		return nil, errors.ErrUnknownGoFieldType
 	}
 
-	innerType := strings.TrimPrefix(goType, "map[")
-	innerType = strings.Split(innerType, "]")[0]
-	outerType := strings.Split(goType, "]")[1]
+	goType = strings.TrimPrefix(goType, "[]")
+	complexType, isComplexType := conv.complexTypes[goType]
+	if !isComplexType {
+		return nil, errors.ErrUnknownGoFieldType
+	}
 
-	lines = append(lines, fmt.Sprintf("    res%v := make(%s)", i, goType))
-	lines = append(lines, "    for i := 0; i < len(res.Data.ReturnData); i+=2 {")
+	noOfFields := len(complexType)
+	lines = append(lines, fmt.Sprintf("    res%v := make([]%s, 0)", i, goType))
+	lines = append(lines, fmt.Sprintf("    for i := 0; i < len(res.Data.ReturnData); i+=%v {", noOfFields))
 
-	// generate inner object
-	switch innerType {
-	case "uint64":
-		lines = append(lines, fmt.Sprintf("        inner%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64()", i))
+	for j := 0; j < noOfFields; j++ {
+		typeName := complexType[j][0]
+		innerType := complexType[j][1]
+		// generate inner object
+		switch innerType {
+		case "uint64":
+			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64()", typeName, j))
 
-	case "uint32":
-		lines = append(lines, fmt.Sprintf("        inner%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64())", i))
+		case "uint32":
+			lines = append(lines, fmt.Sprintf("        %s := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64())", typeName, j))
 
-	case "*big.Int":
-		lines = append(lines, fmt.Sprintf("        inner%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i])", i))
+		case "*big.Int":
+			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v])", typeName, j))
 
-	case "bool":
-		lines = append(lines, fmt.Sprintf("        inner%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64() == 1", i))
+		case "bool":
+			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64() == 1", typeName, j))
 
-	case "Address":
-		lines = append(lines, fmt.Sprintf("        inner%v := res.Data.ReturnData[i])", i))
+		case "Address":
+			lines = append(lines, fmt.Sprintf("        %s := res.Data.ReturnData[i+%v])", typeName, j))
 
-	case "TokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        inner%v := TokenIdentifier(res.Data.ReturnData[i])", i))
+		case "TokenIdentifier":
+			lines = append(lines, fmt.Sprintf("        %s := TokenIdentifier(res.Data.ReturnData[i+%v])", typeName, j))
 
-	case "EgldOrEsdtTokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        inner%v := EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i])", i))
+		case "EgldOrEsdtTokenIdentifier":
+			lines = append(lines, fmt.Sprintf("        %s := EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i+%v])", typeName, j))
 
-	case "string":
-		lines = append(lines, fmt.Sprintf("        inner%v := string(res.Data.ReturnData[i])", i))
+		case "EsdtLocalRole":
+			lines = append(lines, fmt.Sprintf("        %s := EsdtLocalRole(byte(big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64))", typeName, j))
 
-	default:
-		complexType, ok := conv.complexTypes[innerType]
-		if ok {
-			conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-			lines = append(lines, "        idx := 0")
-			lines = append(lines, "        ok, allOk := true, true")
-			for n, t := range complexType {
-				fieldLine := fmt.Sprintf("        _%s, idx, ok := utils.Parse", n)
-				parseType, err := conv.getParseType(t, "")
-				if err != nil {
-					return nil, err
+		case "string":
+			lines = append(lines, fmt.Sprintf("        %s := string(res.Data.ReturnData[i+%v])", typeName, j))
+
+		default:
+			innerComplexType, isInnerComplexType := conv.complexTypes[innerType]
+			if isInnerComplexType {
+				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
+				lines = append(lines, "        idx := 0")
+				lines = append(lines, "        ok, allOk := true, true")
+				for _, ct := range innerComplexType {
+					fieldLine := fmt.Sprintf("        _%s%s, idx, ok := utils.Parse", typeName, ct[0])
+					parseType, err := conv.getParseType(ct[1], "")
+					if err != nil {
+						return nil, err
+					}
+
+					fieldLine += parseType + fmt.Sprintf("(res.Data.ReturnData[i+%v], idx)", j)
+					lines = append(lines, fieldLine)
+					lines = append(lines, "        allOk = allOk && ok")
 				}
-
-				fieldLine += parseType + "(res.Data.ReturnData[i], idx)"
-				lines = append(lines, fieldLine)
-				lines = append(lines, "        allOk = allOk && ok")
-			}
-			lines = append(lines, "        if !allOk {")
-			lines = append(lines, "            continue")
-			lines = append(lines, "        }")
-			lines = append(lines, fmt.Sprintf("        inner%v := %s{", i, innerType))
-			for n, t := range complexType {
-				abiType, ok := conv.abi.Types[t]
-				if (ok && abiType.Type == "enum") || conv.customTypes[t] {
-					lines = append(lines, fmt.Sprintf("            %s: %s(_%s),", n, t, n))
-					continue
+				lines = append(lines, "        if !allOk {")
+				lines = append(lines, "            continue")
+				lines = append(lines, "        }")
+				lines = append(lines, fmt.Sprintf("        %s := %s{", typeName, innerType))
+				for _, ct := range innerComplexType {
+					abiType, ok := conv.abi.Types[ct[0]]
+					if (ok && abiType.Type == "enum") || conv.customTypes[ct[1]] {
+						lines = append(lines, fmt.Sprintf("            %s: %s(_%s%s),", ct[0], ct[1], typeName, ct[0]))
+						continue
+					}
+					lines = append(lines, fmt.Sprintf("            %s: _%s%s,", ct[0], typeName, ct[0]))
 				}
-				lines = append(lines, fmt.Sprintf("            %s: _%s,", n, n))
+				lines = append(lines, "        }")
+			} else {
+				return nil, errors.ErrNotImplemented
 			}
-			lines = append(lines, "        }")
-		} else {
-			return nil, errors.ErrNotImplemented
 		}
 	}
-
-	// generate outer object
-	switch outerType {
-	case "uint64":
-		lines = append(lines, fmt.Sprintf("        outer%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64()", i))
-
-	case "uint32":
-		lines = append(lines, fmt.Sprintf("        outer%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())", i))
-
-	case "*big.Int":
-		lines = append(lines, fmt.Sprintf("        outer%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i+1])", i))
-
-	case "bool":
-		lines = append(lines, fmt.Sprintf("        outer%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64() == 1", i))
-
-	case "Address":
-		lines = append(lines, fmt.Sprintf("        outer%v := res.Data.ReturnData[i+1]", i))
-
-	case "TokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        outer%v := TokenIdentifier(res.Data.ReturnData[i+1])", i))
-
-	case "EgldOrEsdtTokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        outer%v := EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i+1])", i))
-
-	case "string":
-		lines = append(lines, fmt.Sprintf("        outer%v := string(res.Data.ReturnData[i+1])", i))
-
-	default:
-		return nil, errors.ErrNotImplemented
+	lines = append(lines, fmt.Sprintf("        inner := %s{", goType))
+	for j := 0; j < noOfFields; j++ {
+		typeName := complexType[j][0]
+		lines = append(lines, fmt.Sprintf("            %s: %s,", typeName, typeName))
 	}
-
-	lines = append(lines, fmt.Sprintf("        res%v[inner%v] = outer%v", i, i, i))
+	lines = append(lines, "        }")
+	lines = append(lines, fmt.Sprintf("        res%v = append(res%v, inner)", i, i))
 	lines = append(lines, "    }")
 
 	return lines, nil
@@ -324,10 +313,10 @@ func (conv *AbiConverter) setVariadicOutput(i int, output data.AbiEndpointIO) ([
 		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, res.Data.ReturnData[i])", i, i))
 
 	case "TokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, string(res.Data.ReturnData[i]))", i, i))
+		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, TokenIdentifier(res.Data.ReturnData[i]))", i, i))
 
 	case "EgldOrEsdtTokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, string(res.Data.ReturnData[i]))", i, i))
+		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i]))", i, i))
 
 	case "string":
 		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, string(res.Data.ReturnData[i]))", i, i))
@@ -517,7 +506,9 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
 				lines = append(lines, "    idx := 0")
 				lines = append(lines, "    ok, allOk := true, true")
-				for n, t := range complexType {
+				for _, ct := range complexType {
+					n := ct[0]
+					t := ct[1]
 					fieldLine := fmt.Sprintf("    _%s, idx, ok := utils.Parse", n)
 					parseType, err := conv.getParseType(t, "")
 					if err != nil {
@@ -538,7 +529,9 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 				lines = append(lines, "            return "+errReturn+"ors.New(\"invalid response\")")
 				lines = append(lines, "    }")
 				lines = append(lines, fmt.Sprintf("    res%v := %s{", i, goType))
-				for n, t := range complexType {
+				for _, ct := range complexType {
+					n := ct[0]
+					t := ct[1]
 					abiType, ok := conv.abi.Types[t]
 					if (ok && abiType.Type == "enum") || conv.customTypes[t] {
 						lines = append(lines, fmt.Sprintf("        %s: %s(_%s),", n, t, n))
@@ -674,6 +667,11 @@ func (conv *AbiConverter) generateInputArg(name string, goType string, i int) ([
 
 		return []string{"args = append(args, hex.EncodeToString([]byte(" + name + ")))"}, nil
 
+	case "EsdtLocalRole":
+		conv.imports["encoding/hex"] = true
+
+		return []string{"args = append(args, hex.EncodeToString([]byte{byte(" + name + ")}))"}, nil
+
 	case "string":
 		conv.imports["encoding/hex"] = true
 
@@ -688,8 +686,31 @@ func (conv *AbiConverter) generateInputArg(name string, goType string, i int) ([
 			return nil, err
 		}
 
+		for i, arg := range args {
+			args[i] = "    " + arg
+		}
 		lines = append(lines, args...)
 		lines = append(lines, "}")
+
+		return lines, nil
+	}
+
+	complexType, isComplexType := conv.complexTypes[goType]
+	if isComplexType {
+		lines := make([]string, 0)
+		for i, ct := range complexType {
+			n := ct[0]
+			t := ct[1]
+			args, err := conv.generateInputArg(name+"."+n, t, i)
+			if err != nil {
+				return nil, err
+			}
+
+			for i, arg := range args {
+				args[i] = "    " + arg
+			}
+			lines = append(lines, args...)
+		}
 
 		return lines, nil
 	}
@@ -747,6 +768,11 @@ func (conv *AbiConverter) getParseType(goType string, fieldType string) (string,
 	default:
 		if fieldType != "" && conv.abi.Types[fieldType] != nil && conv.abi.Types[fieldType].Type == "enum" {
 			return "Byte", nil
+		}
+
+		_, isComplexType := conv.complexTypes[goType]
+		if isComplexType {
+			return "ComplexType", nil
 		}
 	}
 
