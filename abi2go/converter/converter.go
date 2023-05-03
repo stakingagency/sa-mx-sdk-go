@@ -25,7 +25,7 @@ func NewAbiConverter(fileName string) (*AbiConverter, error) {
 		return nil, err
 	}
 
-	if abi.BuildInfo.Framework.Name != "multiversx-sc" {
+	if abi.BuildInfo.Framework.Name != "multiversx-sc" && abi.BuildInfo.Framework.Name != "elrond-wasm" {
 		return nil, errors.ErrNotMultiversX
 	}
 

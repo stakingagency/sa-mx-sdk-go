@@ -13,21 +13,20 @@ func (conv *AbiConverter) convertTypes() ([]string, error) {
 	for abiTypeName, abiType := range conv.abi.Types {
 		switch abiType.Type {
 		case "struct":
-			lines = append(lines, fmt.Sprintf("type %s struct {", abiTypeName))
 			for i, field := range abiType.Fields {
 				// capitalize first letter of struct fields to export them
 				conv.abi.Types[abiTypeName].Fields[i].Name = utils.ToUpperFirstChar(field.Name)
 			}
+			complexType := make([][2]string, 0)
 			for _, field := range abiType.Fields {
 				goType, err := conv.abiType2goType(field.Type)
 				if err != nil {
 					return nil, err
 				}
 
-				lines = append(lines, fmt.Sprintf("    %s %s", field.Name, goType))
+				complexType = append(complexType, [2]string{field.Name, goType})
 			}
-			lines = append(lines, "}")
-			lines = append(lines, "")
+			conv.complexTypes[abiTypeName] = complexType
 
 		case "enum":
 			lines = append(lines, fmt.Sprintf("type %s int", abiTypeName))
@@ -70,6 +69,11 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		return "uint32", nil
 
 	case "BigUint":
+		conv.imports["math/big"] = true
+
+		return "*big.Int", nil
+
+	case "BigInt":
 		conv.imports["math/big"] = true
 
 		return "*big.Int", nil

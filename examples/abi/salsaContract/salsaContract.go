@@ -1,13 +1,13 @@
 package salsaContract
 
 import (
-    "github.com/stakingagency/sa-mx-sdk-go/data"
-    "strings"
-    "encoding/binary"
     "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
+    "github.com/stakingagency/sa-mx-sdk-go/data"
+    "strings"
+    "encoding/binary"
 )
 
 type TokenIdentifier string
@@ -20,17 +20,17 @@ type EsdtTokenPayment struct {
     Amount *big.Int
 }
 
+type Undelegation struct {
+    Amount *big.Int
+    Unbond_epoch uint64
+}
+
 type State int
 
 const (
     Inactive State = 0
     Active State = 1
 )
-
-type Undelegation struct {
-    Amount *big.Int
-    Unbond_epoch uint64
-}
 
 type SalsaContract struct {
     netMan *network.NetworkManager
@@ -107,10 +107,10 @@ func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegatio
     }
 
     res0 := make([]Undelegation, 0)
-    idx := 0
-    allOk, ok := true, true
-    var _Amount *big.Int
-    var _Unbond_epoch uint64
+        idx := 0
+        ok, allOk := true, true
+        var _Amount *big.Int
+        var _Unbond_epoch uint64
     for {
         _Amount, idx, ok = utils.ParseBigInt(res.Data.ReturnData[0], idx)
         allOk = allOk && ok
@@ -119,11 +119,11 @@ func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegatio
         if !allOk {
             break
         }
-        item := Undelegation{
+        _item := Undelegation{
             Amount: _Amount,
             Unbond_epoch: _Unbond_epoch,
         }
-        res0 = append(res0, item)
+        res0 = append(res0, _item)
     }
 
     return res0, nil
@@ -180,10 +180,10 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
     }
 
     res0 := make([]Undelegation, 0)
-    idx := 0
-    allOk, ok := true, true
-    var _Amount *big.Int
-    var _Unbond_epoch uint64
+        idx := 0
+        ok, allOk := true, true
+        var _Amount *big.Int
+        var _Unbond_epoch uint64
     for {
         _Amount, idx, ok = utils.ParseBigInt(res.Data.ReturnData[0], idx)
         allOk = allOk && ok
@@ -192,11 +192,11 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
         if !allOk {
             break
         }
-        item := Undelegation{
+        _item := Undelegation{
             Amount: _Amount,
             Unbond_epoch: _Unbond_epoch,
         }
-        res0 = append(res0, item)
+        res0 = append(res0, _item)
     }
 
     return res0, nil
@@ -223,7 +223,8 @@ func (contract *SalsaContract) GetUsersReserves() ([]*big.Int, error) {
 
     res0 := make([]*big.Int, 0)
     for i := 0; i < len(res.Data.ReturnData); i++ {
-        res0 = append(res0, big.NewInt(0).SetBytes(res.Data.ReturnData[i]))
+        _item := big.NewInt(0).SetBytes(res.Data.ReturnData[i])
+        res0 = append(res0, _item)
     }
 
     return res0, nil

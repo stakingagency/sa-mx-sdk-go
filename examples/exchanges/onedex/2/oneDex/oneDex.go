@@ -1,31 +1,31 @@
 package oneDex
 
 import (
-    "github.com/stakingagency/sa-mx-sdk-go/utils"
-    "encoding/binary"
-    "encoding/hex"
-    "errors"
-    "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
     "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
+    "github.com/stakingagency/sa-mx-sdk-go/utils"
+    "errors"
+    "encoding/binary"
+    "encoding/hex"
+    "github.com/stakingagency/sa-mx-sdk-go/data"
 )
 
 type Address []byte
 
 type TokenIdentifier string
 
-type ComplexType0 struct {
+type ComplexType1 struct {
     Var0 TokenIdentifier
     Var1 TokenIdentifier
 }
 
-type ComplexType1 struct {
-    Var0 ComplexType0
+type ComplexType2 struct {
+    Var0 ComplexType1
     Var1 uint32
 }
 
-type ComplexType2 struct {
+type ComplexType3 struct {
     Var0 TokenIdentifier
     Var1 uint32
 }
@@ -218,29 +218,29 @@ func (contract *OneDex) GetPaused() (bool, error) {
     return res0, nil
 }
 
-func (contract *OneDex) GetPairIds() ([]ComplexType1, error) {
+func (contract *OneDex) GetPairIds() ([]ComplexType2, error) {
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getPairIds", nil)
     if err != nil {
         return nil, err
     }
 
-    res0 := make([]ComplexType1, 0)
+    res0 := make([]ComplexType2, 0)
     for i := 0; i < len(res.Data.ReturnData); i+=2 {
         idx := 0
         ok, allOk := true, true
-        _Var0Var0, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
+        _Var0, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
         allOk = allOk && ok
-        _Var0Var1, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
+        _Var1, idx, ok := utils.ParseString(res.Data.ReturnData[i+0], idx)
         allOk = allOk && ok
         if !allOk {
-            continue
+            return nil, errors.New("invalid response")
         }
-        Var0 := ComplexType0{
-            Var0: TokenIdentifier(_Var0Var0),
-            Var1: TokenIdentifier(_Var0Var1),
+        Var0 := ComplexType1{
+            Var0: TokenIdentifier(_Var0),
+            Var1: TokenIdentifier(_Var1),
         }
         Var1 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
-        inner := ComplexType1{
+        inner := ComplexType2{
             Var0: Var0,
             Var1: Var1,
         }
@@ -261,17 +261,17 @@ func (contract *OneDex) GetLastPairId() (uint32, error) {
     return res0, nil
 }
 
-func (contract *OneDex) GetLpTokenPairIdMap() ([]ComplexType2, error) {
+func (contract *OneDex) GetLpTokenPairIdMap() ([]ComplexType3, error) {
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getLpTokenPairIdMap", nil)
     if err != nil {
         return nil, err
     }
 
-    res0 := make([]ComplexType2, 0)
+    res0 := make([]ComplexType3, 0)
     for i := 0; i < len(res.Data.ReturnData); i+=2 {
         Var0 := TokenIdentifier(res.Data.ReturnData[i+0])
         Var1 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
-        inner := ComplexType2{
+        inner := ComplexType3{
             Var0: Var0,
             Var1: Var1,
         }
@@ -528,9 +528,9 @@ func (contract *OneDex) ViewPairs() ([]Pair, error) {
         _Lp_token_roles_are_set, idx, ok := utils.ParseBool(res.Data.ReturnData[i], idx)
         allOk = allOk && ok
         if !allOk {
-            continue
+            return nil, errors.New("invalid response")
         }
-        item := Pair{
+        _item := Pair{
             Pair_id: _Pair_id,
             State: State(_State),
             Enabled: _Enabled,
@@ -544,7 +544,7 @@ func (contract *OneDex) ViewPairs() ([]Pair, error) {
             Lp_token_supply: _Lp_token_supply,
             Lp_token_roles_are_set: _Lp_token_roles_are_set,
         }
-        res0 = append(res0, item)
+        res0 = append(res0, _item)
     }
 
     return res0, nil

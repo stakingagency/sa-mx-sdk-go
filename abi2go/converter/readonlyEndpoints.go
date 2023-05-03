@@ -144,42 +144,12 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 
 	// set output values
 	for i, output := range endpoint.Outputs {
-		if utils.IsMultiVariadic(output.Type) || utils.IsMulti(output.Type) {
-			setMultiVariadic, err := conv.setMultiVariadicOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setMultiVariadic...)
-			continue
-		}
-
-		if utils.IsSimpleVariadic(output.Type) {
-			setVariadic, err := conv.setVariadicOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setVariadic...)
-			continue
-		}
-
-		if utils.IsList(output.Type) {
-			setList, err := conv.setListOutput(i, output)
-			if err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, setList...)
-			continue
-		}
-
-		setSimpleValue, err := conv.setSimpleOutput(i, output)
+		oLines, err := conv.setOutput(i, output)
 		if err != nil {
 			return nil, err
 		}
 
-		lines = append(lines, setSimpleValue...)
+		lines = append(lines, oLines...)
 	}
 	lines = append(lines, "")
 	line = "    return "
@@ -194,357 +164,247 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 	return lines, nil
 }
 
-func (conv *AbiConverter) setMultiVariadicOutput(i int, output data.AbiEndpointIO) ([]string, error) {
+func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string, error) {
 	lines := make([]string, 0)
 	goType, _ := conv.abiType2goType(output.Type)
-	if !strings.HasPrefix(goType, "[]") {
-		return nil, errors.ErrUnknownGoFieldType
-	}
-
+	isArray := strings.HasPrefix(goType, "[]")
 	goType = strings.TrimPrefix(goType, "[]")
 	complexType, isComplexType := conv.complexTypes[goType]
+
+	varName := fmt.Sprintf("res%v", i)
+	if isArray {
+		lines = append(lines, fmt.Sprintf("    %s := make([]%s, 0)", varName, goType))
+	}
+
+	if utils.IsMultiVariadic(output.Type) || utils.IsMulti(output.Type) {
+		if !isComplexType || !isArray {
+			return nil, errors.ErrUnknownGoFieldType
+		}
+
+		noOfFields := len(complexType)
+		lines = append(lines, fmt.Sprintf("    for i := 0; i < len(res.Data.ReturnData); i+=%v {", noOfFields))
+		for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
+			typeName := complexType[fieldIdx][0]
+			innerType := complexType[fieldIdx][1]
+			dataSource := fmt.Sprintf("res.Data.ReturnData[i+%v]", fieldIdx)
+			parsedLines, err := conv.parseAnyType(typeName, innerType, typeName, dataSource, "        ", output)
+			if err != nil {
+				return nil, err
+			}
+
+			lines = append(lines, parsedLines...)
+		}
+		lines = append(lines, fmt.Sprintf("        inner := %s{", goType))
+		for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
+			typeName := complexType[fieldIdx][0]
+			lines = append(lines, fmt.Sprintf("            %s: %s,", typeName, typeName))
+		}
+		lines = append(lines, "        }")
+		lines = append(lines, fmt.Sprintf("        %s = append(%s, inner)", varName, varName))
+		lines = append(lines, "    }")
+
+		return lines, nil
+	}
+
+	if utils.IsSimpleVariadic(output.Type) {
+		if !isArray {
+			return nil, errors.ErrUnknownGoFieldType
+		}
+
+		lines = append(lines, "    for i := 0; i < len(res.Data.ReturnData); i++ {")
+		dataSource := "res.Data.ReturnData[i]"
+		parsedLines, err := conv.parseAnyType(output.Name, goType, "_item", dataSource, "        ", output)
+		if err != nil {
+			return nil, err
+		}
+
+		lines = append(lines, parsedLines...)
+		lines = append(lines, fmt.Sprintf("        %s = append(%s, _item)", varName, varName))
+		lines = append(lines, "    }")
+
+		return lines, nil
+	}
+
+	if utils.IsList(output.Type) {
+		if !isArray || !isComplexType {
+			return nil, errors.ErrUnknownGoFieldType
+		}
+
+		dataSource := "res.Data.ReturnData[0]"
+		iLines, err := conv.instantiateParser(goType, true, "        ")
+		if err != nil {
+			return nil, err
+		}
+
+		lines = append(lines, iLines...)
+		lines = append(lines, "    for {")
+
+		cLines, err := conv.parseComplexType(output.Name, goType, "_item", dataSource, "        ", false, "break", output)
+		if err != nil {
+			return nil, err
+		}
+
+		lines = append(lines, cLines...)
+		lines = append(lines, fmt.Sprintf("        %s = append(%s, _item)", varName, varName))
+		lines = append(lines, "    }")
+
+		return lines, nil
+	}
+
+	dataSource := fmt.Sprintf("res.Data.ReturnData[%v]", i)
+	parsedLines, err := conv.parseAnyType(output.Name, goType, varName, dataSource, "    ", output)
+	if err != nil {
+		return nil, err
+	}
+
+	lines = append(lines, parsedLines...)
+
+	return lines, nil
+}
+
+func (conv *AbiConverter) parseAnyType(typeName string, goType string, varName string, dataSource string, indent string, output data.AbiEndpointIO) ([]string, error) {
+	lines := make([]string, 0)
+	switch goType {
+	case "uint64":
+		lines = append(lines, fmt.Sprintf("%s%s := big.NewInt(0).SetBytes(%s).Uint64()", indent, varName, dataSource))
+
+	case "uint32":
+		lines = append(lines, fmt.Sprintf("%s%s := uint32(big.NewInt(0).SetBytes(%s).Uint64())", indent, varName, dataSource))
+
+	case "*big.Int":
+		lines = append(lines, fmt.Sprintf("%s%s := big.NewInt(0).SetBytes(%s)", indent, varName, dataSource))
+
+	case "bool":
+		lines = append(lines, fmt.Sprintf("%s%s := big.NewInt(0).SetBytes(%s).Uint64() == 1", indent, varName, dataSource))
+
+	case "Address":
+		lines = append(lines, fmt.Sprintf("%s%s := %s", indent, varName, dataSource))
+
+	case "TokenIdentifier":
+		lines = append(lines, fmt.Sprintf("%s%s := TokenIdentifier(%s)", indent, varName, dataSource))
+
+	case "EgldOrEsdtTokenIdentifier":
+		lines = append(lines, fmt.Sprintf("%s%s := EgldOrEsdtTokenIdentifier(%s)", indent, varName, dataSource))
+
+	case "EsdtLocalRole":
+		lines = append(lines, fmt.Sprintf("%s%s := EsdtLocalRole(byte(big.NewInt(0).SetBytes(%s).Uint64()))", indent, varName, dataSource))
+
+	case "string":
+		lines = append(lines, fmt.Sprintf("%s%s := string(%s)", indent, varName, dataSource))
+
+	default:
+		_, isComplexType := conv.complexTypes[goType]
+		if isComplexType {
+			iLines, err := conv.instantiateParser(goType, false, indent)
+			if err != nil {
+				return nil, err
+			}
+
+			lines = append(lines, iLines...)
+			cLines, err := conv.parseComplexType(typeName, goType, varName, dataSource, indent, true, "return", output)
+			if err != nil {
+				return nil, err
+			}
+
+			lines = append(lines, cLines...)
+
+			return lines, nil
+		}
+
+		abiType, isAbiType := conv.abi.Types[goType]
+		if isAbiType && abiType.Type == "enum" {
+			lines = append(lines, fmt.Sprintf("%s%s := %s(big.NewInt(0).SetBytes(%s).Uint64())", indent, varName, goType, dataSource))
+
+			return lines, nil
+		}
+
+		return nil, errors.ErrNotImplemented
+	}
+
+	return lines, nil
+}
+
+func (conv *AbiConverter) instantiateParser(goType string, allVars bool, indent string) ([]string, error) {
+	conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
+	lines := make([]string, 0)
+	lines = append(lines, fmt.Sprintf("%sidx := 0", indent))
+	lines = append(lines, fmt.Sprintf("%sok, allOk := true, true", indent))
+	complexType, isComplexType := conv.complexTypes[goType]
+	if allVars && isComplexType {
+		for _, ct := range complexType {
+			fieldName := ct[0]
+			fieldType := ct[1]
+			if fieldType == "TokenIdentifier" || fieldType == "EgldOrEsdtTokenIdentifier" {
+				fieldType = "string"
+			}
+			lines = append(lines, fmt.Sprintf("%svar _%s %s", indent, fieldName, fieldType))
+		}
+	}
+
+	return lines, nil
+}
+
+func (conv *AbiConverter) parseComplexType(typeName string, goType string, varName string, dataSource string, indent string, newVars bool, notAllOk string, output data.AbiEndpointIO) ([]string, error) {
+	complexType, isComplexType := conv.complexTypes[goType]
 	if !isComplexType {
-		return nil, errors.ErrUnknownGoFieldType
+		return nil, errors.ErrNotImplemented
 	}
 
-	noOfFields := len(complexType)
-	lines = append(lines, fmt.Sprintf("    res%v := make([]%s, 0)", i, goType))
-	lines = append(lines, fmt.Sprintf("    for i := 0; i < len(res.Data.ReturnData); i+=%v {", noOfFields))
-
-	for j := 0; j < noOfFields; j++ {
-		typeName := complexType[j][0]
-		innerType := complexType[j][1]
-		// generate inner object
-		switch innerType {
-		case "uint64":
-			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64()", typeName, j))
-
-		case "uint32":
-			lines = append(lines, fmt.Sprintf("        %s := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64())", typeName, j))
-
-		case "*big.Int":
-			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v])", typeName, j))
-
-		case "bool":
-			lines = append(lines, fmt.Sprintf("        %s := big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64() == 1", typeName, j))
-
-		case "Address":
-			lines = append(lines, fmt.Sprintf("        %s := res.Data.ReturnData[i+%v])", typeName, j))
-
-		case "TokenIdentifier":
-			lines = append(lines, fmt.Sprintf("        %s := TokenIdentifier(res.Data.ReturnData[i+%v])", typeName, j))
-
-		case "EgldOrEsdtTokenIdentifier":
-			lines = append(lines, fmt.Sprintf("        %s := EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i+%v])", typeName, j))
-
-		case "EsdtLocalRole":
-			lines = append(lines, fmt.Sprintf("        %s := EsdtLocalRole(byte(big.NewInt(0).SetBytes(res.Data.ReturnData[i+%v]).Uint64))", typeName, j))
-
-		case "string":
-			lines = append(lines, fmt.Sprintf("        %s := string(res.Data.ReturnData[i+%v])", typeName, j))
-
-		default:
-			innerComplexType, isInnerComplexType := conv.complexTypes[innerType]
-			if isInnerComplexType {
-				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-				lines = append(lines, "        idx := 0")
-				lines = append(lines, "        ok, allOk := true, true")
-				for _, ct := range innerComplexType {
-					fieldLine := fmt.Sprintf("        _%s%s, idx, ok := utils.Parse", typeName, ct[0])
-					parseType, err := conv.getParseType(ct[1], "")
-					if err != nil {
-						return nil, err
-					}
-
-					fieldLine += parseType + fmt.Sprintf("(res.Data.ReturnData[i+%v], idx)", j)
-					lines = append(lines, fieldLine)
-					lines = append(lines, "        allOk = allOk && ok")
-				}
-				lines = append(lines, "        if !allOk {")
-				lines = append(lines, "            continue")
-				lines = append(lines, "        }")
-				lines = append(lines, fmt.Sprintf("        %s := %s{", typeName, innerType))
-				for _, ct := range innerComplexType {
-					abiType, ok := conv.abi.Types[ct[0]]
-					if (ok && abiType.Type == "enum") || conv.customTypes[ct[1]] {
-						lines = append(lines, fmt.Sprintf("            %s: %s(_%s%s),", ct[0], ct[1], typeName, ct[0]))
-						continue
-					}
-					lines = append(lines, fmt.Sprintf("            %s: _%s%s,", ct[0], typeName, ct[0]))
-				}
-				lines = append(lines, "        }")
-			} else {
-				return nil, errors.ErrNotImplemented
-			}
-		}
+	attribute := ""
+	if newVars {
+		attribute = ":"
 	}
-	lines = append(lines, fmt.Sprintf("        inner := %s{", goType))
-	for j := 0; j < noOfFields; j++ {
-		typeName := complexType[j][0]
-		lines = append(lines, fmt.Sprintf("            %s: %s,", typeName, typeName))
-	}
-	lines = append(lines, "        }")
-	lines = append(lines, fmt.Sprintf("        res%v = append(res%v, inner)", i, i))
-	lines = append(lines, "    }")
-
-	return lines, nil
-}
-
-func (conv *AbiConverter) setVariadicOutput(i int, output data.AbiEndpointIO) ([]string, error) {
 	lines := make([]string, 0)
-	goType, _ := conv.abiType2goType(output.Type)
-	goType = strings.TrimPrefix(goType, "[]")
-	lines = append(lines, fmt.Sprintf("    res%v := make([]%s, 0)", i, goType))
-	lines = append(lines, "    for i := 0; i < len(res.Data.ReturnData); i++ {")
-	switch goType {
-	case "uint64":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64())", i, i))
+	for _, ct := range complexType {
+		fieldName := ct[0]
+		fieldType := ct[1]
+		fieldLine := fmt.Sprintf("%s_%s, idx, ok %s= utils.Parse", indent, fieldName, attribute)
+		parseType, err := conv.getParseType(fieldType)
+		if err != nil {
+			return nil, err
+		}
 
-	case "uint32":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64()))", i, i))
-
-	case "*big.Int":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, big.NewInt(0).SetBytes(res.Data.ReturnData[i]))", i, i))
-
-	case "bool":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64() == 1)", i, i))
-
-	case "Address":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, res.Data.ReturnData[i])", i, i))
-
-	case "TokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, TokenIdentifier(res.Data.ReturnData[i]))", i, i))
-
-	case "EgldOrEsdtTokenIdentifier":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, EgldOrEsdtTokenIdentifier(res.Data.ReturnData[i]))", i, i))
-
-	case "string":
-		lines = append(lines, fmt.Sprintf("        res%v = append(res%v, string(res.Data.ReturnData[i]))", i, i))
-
-	default:
-		abiType, ok := conv.abi.Types[goType]
-		if ok {
-			if abiType.Type == "enum" {
-				lines = append(lines, fmt.Sprintf("        res%v = append(res%v, %s(big.NewInt(0).SetBytes(res.Data.ReturnData[i])))", i, i, goType))
-			} else {
-				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-				lines = append(lines, "        idx := 0")
-				lines = append(lines, "        ok, allOk := true, true")
-				for _, field := range abiType.Fields {
-					innerGoType, err := conv.abiType2goType(field.Type)
-					if err != nil {
-						return nil, err
-					}
-
-					line := fmt.Sprintf("        _%s, idx, ok := utils.Parse", field.Name)
-					parseType, err := conv.getParseType(innerGoType, field.Type)
-					if err != nil {
-						return nil, err
-					}
-
-					line += parseType + "(res.Data.ReturnData[i], idx)"
-					lines = append(lines, line)
-					lines = append(lines, "        allOk = allOk && ok")
-				}
-				lines = append(lines, "        if !allOk {")
-				lines = append(lines, "            continue")
-				lines = append(lines, "        }")
-				lines = append(lines, fmt.Sprintf("        item := %s{", goType))
-				for _, field := range abiType.Fields {
-					abiType, ok := conv.abi.Types[field.Type]
-					if (ok && abiType.Type == "enum") || conv.customTypes[field.Type] {
-						lines = append(lines, fmt.Sprintf("            %s: %s(_%s),", field.Name, field.Type, field.Name))
-						continue
-					}
-					lines = append(lines, fmt.Sprintf("            %s: _%s,", field.Name, field.Name))
-				}
-				lines = append(lines, "        }")
-				lines = append(lines, fmt.Sprintf("        res%v = append(res%v, item)", i, i))
+		if parseType == "ComplexType" {
+			ctLines, err := conv.parseComplexType(fieldName, fieldType, "_"+fieldName, dataSource, indent, newVars, notAllOk, output)
+			if err != nil {
+				return nil, err
 			}
+
+			lines = append(lines, ctLines...)
 		} else {
-			return nil, errors.ErrNotImplemented
+			fieldLine += parseType + fmt.Sprintf("(%s, idx)", dataSource)
+			lines = append(lines, fieldLine)
+			lines = append(lines, fmt.Sprintf("%sallOk = allOk && ok", indent))
 		}
 	}
-	lines = append(lines, "    }")
-
-	return lines, nil
-}
-
-func (conv *AbiConverter) setListOutput(i int, output data.AbiEndpointIO) ([]string, error) {
-	lines := make([]string, 0)
-	goType, _ := conv.abiType2goType(output.Type)
-	goType = strings.TrimPrefix(goType, "[]")
-	lines = append(lines, fmt.Sprintf("    res%v := make([]%s, 0)", i, goType))
-	lines = append(lines, "    idx := 0")
-	lines = append(lines, "    allOk, ok := true, true")
-	switch goType {
-	default:
-		if conv.abi.Types[goType] != nil {
-			for _, field := range conv.abi.Types[goType].Fields {
-				fieldType, _ := conv.abiType2goType(field.Type)
-				lines = append(lines, fmt.Sprintf("    var _%s %s", field.Name, fieldType))
-			}
+	lines = append(lines, fmt.Sprintf("%sif !allOk {", indent))
+	switch notAllOk {
+	case "continue":
+		lines = append(lines, fmt.Sprintf("%s    continue", indent))
+	case "break":
+		lines = append(lines, fmt.Sprintf("%s    break", indent))
+	case "return":
+		errReturn, err := conv.generateErrorReturn([]data.AbiEndpointIO{output})
+		if err != nil {
+			return nil, err
 		}
-	}
-	lines = append(lines, "    for {")
-	switch goType {
-	default:
-		if conv.abi.Types[goType] != nil {
-			conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-			for _, field := range conv.abi.Types[goType].Fields {
-				line := fmt.Sprintf("        _%s, idx, ok = utils.Parse", field.Name)
-				fieldGoType, _ := conv.abiType2goType(field.Type)
-				parseType, err := conv.getParseType(fieldGoType, field.Type)
-				if err != nil {
-					return nil, err
-				}
 
-				line += parseType + "(res.Data.ReturnData[0], idx)"
-				lines = append(lines, line)
-				lines = append(lines, "        allOk = allOk && ok")
-			}
-			lines = append(lines, "        if !allOk {")
-			lines = append(lines, "            break")
-			lines = append(lines, "        }")
-			lines = append(lines, fmt.Sprintf("        item := %s{", goType))
-			for _, field := range conv.abi.Types[goType].Fields {
-				abiType, ok := conv.abi.Types[field.Type]
-				if (ok && abiType.Type == "enum") || conv.customTypes[field.Type] {
-					lines = append(lines, fmt.Sprintf("            %s: %s(_%s),", field.Name, field.Type, field.Name))
-					continue
-				}
-				lines = append(lines, fmt.Sprintf("            %s: _%s,", field.Name, field.Name))
-			}
-			lines = append(lines, "        }")
-			lines = append(lines, fmt.Sprintf("        res%v = append(res%v, item)", i, i))
-		} else {
-			return nil, errors.ErrNotImplemented
+		conv.imports["errors"] = true
+		lines = append(lines, indent+"    return "+errReturn+"ors.New(\"invalid response\")")
+	}
+	lines = append(lines, fmt.Sprintf("%s}", indent))
+	lines = append(lines, fmt.Sprintf("%s%s := %s{", indent, varName, goType))
+	for _, ct := range complexType {
+		fieldName := ct[0]
+		fieldType := ct[1]
+		abiType, isAbiType := conv.abi.Types[fieldName]
+		if (isAbiType && abiType.Type == "enum") || conv.customTypes[fieldType] {
+			lines = append(lines, fmt.Sprintf("%s    %s: %s(_%s),", indent, fieldName, fieldType, fieldName))
+			continue
 		}
+		lines = append(lines, fmt.Sprintf("%s    %s: _%s,", indent, fieldName, fieldName))
 	}
-	lines = append(lines, "    }")
-
-	return lines, nil
-}
-
-func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]string, error) {
-	goType, _ := conv.abiType2goType(output.Type)
-	goType = strings.TrimPrefix(goType, "[]")
-	lines := make([]string, 0)
-	switch goType {
-	case "uint64":
-		lines = append(lines, fmt.Sprintf("    res%v := big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64()", i, i))
-
-	case "uint32":
-		lines = append(lines, fmt.Sprintf("    res%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64())", i, i))
-
-	case "*big.Int":
-		lines = append(lines, fmt.Sprintf("    res%v := big.NewInt(0).SetBytes(res.Data.ReturnData[%v])", i, i))
-
-	case "bool":
-		lines = append(lines, fmt.Sprintf("    res%v := big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64() == 1", i, i))
-
-	case "Address":
-		lines = append(lines, fmt.Sprintf("    res%v := res.Data.ReturnData[%v]", i, i))
-
-	case "TokenIdentifier":
-		lines = append(lines, fmt.Sprintf("    res%v := TokenIdentifier(res.Data.ReturnData[%v])", i, i))
-
-	case "EgldOrEsdtTokenIdentifier":
-		lines = append(lines, fmt.Sprintf("    res%v := EgldOrEsdtTokenIdentifier(res.Data.ReturnData[%v])", i, i))
-
-	case "string":
-		lines = append(lines, fmt.Sprintf("    res%v := string(res.Data.ReturnData[%v])", i, i))
-
-	default:
-		abiType, ok := conv.abi.Types[goType]
-		if ok {
-			if abiType.Type == "enum" {
-				lines = append(lines, fmt.Sprintf("    res%v := %s(big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64())", i, output.Type, i))
-			} else {
-				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-				lines = append(lines, "    idx := 0")
-				lines = append(lines, "    ok, allOk := true, true")
-				for _, field := range abiType.Fields {
-					innerGoType, err := conv.abiType2goType(field.Type)
-					if err != nil {
-						return nil, err
-					}
-
-					line := fmt.Sprintf("    _%s, idx, ok := utils.Parse", field.Name)
-					parseType, err := conv.getParseType(innerGoType, field.Type)
-					if err != nil {
-						return nil, err
-					}
-
-					line += parseType + fmt.Sprintf("(res.Data.ReturnData[%v], idx)", i)
-					lines = append(lines, line)
-					lines = append(lines, "    allOk = allOk && ok")
-				}
-				lines = append(lines, "    if !allOk {")
-				errReturn, err := conv.generateErrorReturn([]data.AbiEndpointIO{output})
-				if err != nil {
-					return nil, err
-				}
-
-				conv.imports["errors"] = true
-				lines = append(lines, "        return "+errReturn+"ors.New(\"invalid response\")")
-				lines = append(lines, "    }")
-				lines = append(lines, fmt.Sprintf("    res%v := %s{", i, goType))
-				for _, field := range abiType.Fields {
-					abiType, ok := conv.abi.Types[field.Type]
-					if (ok && abiType.Type == "enum") || conv.customTypes[field.Type] {
-						lines = append(lines, fmt.Sprintf("        %s: %s(_%s),", field.Name, field.Type, field.Name))
-						continue
-					}
-					lines = append(lines, fmt.Sprintf("        %s: _%s,", field.Name, field.Name))
-				}
-				lines = append(lines, "    }")
-			}
-		} else {
-			complexType, ok := conv.complexTypes[goType]
-			if ok {
-				conv.imports["github.com/stakingagency/sa-mx-sdk-go/utils"] = true
-				lines = append(lines, "    idx := 0")
-				lines = append(lines, "    ok, allOk := true, true")
-				for _, ct := range complexType {
-					n := ct[0]
-					t := ct[1]
-					fieldLine := fmt.Sprintf("    _%s, idx, ok := utils.Parse", n)
-					parseType, err := conv.getParseType(t, "")
-					if err != nil {
-						return nil, err
-					}
-
-					fieldLine += parseType + fmt.Sprintf("(res.Data.ReturnData[%v], idx)", i)
-					lines = append(lines, fieldLine)
-					lines = append(lines, "    allOk = allOk && ok")
-				}
-				lines = append(lines, "    if !allOk {")
-				errReturn, err := conv.generateErrorReturn([]data.AbiEndpointIO{output})
-				if err != nil {
-					return nil, err
-				}
-
-				conv.imports["errors"] = true
-				lines = append(lines, "            return "+errReturn+"ors.New(\"invalid response\")")
-				lines = append(lines, "    }")
-				lines = append(lines, fmt.Sprintf("    res%v := %s{", i, goType))
-				for _, ct := range complexType {
-					n := ct[0]
-					t := ct[1]
-					abiType, ok := conv.abi.Types[t]
-					if (ok && abiType.Type == "enum") || conv.customTypes[t] {
-						lines = append(lines, fmt.Sprintf("        %s: %s(_%s),", n, t, n))
-						continue
-					}
-					lines = append(lines, fmt.Sprintf("        %s: _%s,", n, n))
-				}
-				lines = append(lines, "        }")
-			} else {
-				return nil, errors.ErrUnknownGoFieldType
-			}
-		}
-	}
+	lines = append(lines, indent+"}")
 
 	return lines, nil
 }
@@ -739,7 +599,7 @@ func (conv *AbiConverter) getDefaultTypeValue(goType string) string {
 	return res
 }
 
-func (conv *AbiConverter) getParseType(goType string, fieldType string) (string, error) {
+func (conv *AbiConverter) getParseType(goType string) (string, error) {
 	switch goType {
 	case "uint64":
 		return "Uint64", nil
@@ -762,11 +622,14 @@ func (conv *AbiConverter) getParseType(goType string, fieldType string) (string,
 	case "EgldOrEsdtTokenIdentifier":
 		return "String", nil
 
+	case "EsdtLocalRole":
+		return "Byte", nil
+
 	case "string":
 		return "String", nil
 
 	default:
-		if fieldType != "" && conv.abi.Types[fieldType] != nil && conv.abi.Types[fieldType].Type == "enum" {
+		if conv.abi.Types[goType] != nil && conv.abi.Types[goType].Type == "enum" {
 			return "Byte", nil
 		}
 
