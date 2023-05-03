@@ -210,7 +210,6 @@ func (conv *AbiConverter) setMultiVariadicOutput(i int, output data.AbiEndpointI
 		lines = append(lines, fmt.Sprintf("        inner%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64()", i))
 
 	case "uint32":
-		conv.imports["encoding/binary"] = true
 		lines = append(lines, fmt.Sprintf("        inner%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i]).Uint64())", i))
 
 	case "*big.Int":
@@ -272,7 +271,6 @@ func (conv *AbiConverter) setMultiVariadicOutput(i int, output data.AbiEndpointI
 		lines = append(lines, fmt.Sprintf("        outer%v := big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64()", i))
 
 	case "uint32":
-		conv.imports["encoding/binary"] = true
 		lines = append(lines, fmt.Sprintf("        outer%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())", i))
 
 	case "*big.Int":
@@ -445,11 +443,9 @@ func (conv *AbiConverter) setSimpleOutput(i int, output data.AbiEndpointIO) ([]s
 	lines := make([]string, 0)
 	switch goType {
 	case "uint64":
-		conv.imports["encoding/binary"] = true
 		lines = append(lines, fmt.Sprintf("    res%v := big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64()", i, i))
 
 	case "uint32":
-		conv.imports["encoding/binary"] = true
 		lines = append(lines, fmt.Sprintf("    res%v := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[%v]).Uint64())", i, i))
 
 	case "*big.Int":
