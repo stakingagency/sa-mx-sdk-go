@@ -1,13 +1,13 @@
 package salsaContract
 
 import (
-    "math/big"
     "github.com/stakingagency/sa-mx-sdk-go/network"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
     "encoding/binary"
     "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
+    "math/big"
 )
 
 type TokenIdentifier string
@@ -210,7 +210,7 @@ func (contract *SalsaContract) GetReserverID(user Address) (uint32, error) {
         return 0, err
     }
 
-    res0 := binary.BigEndian.Uint32(res.Data.ReturnData[0])
+    res0 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[0]).Uint64())
 
     return res0, nil
 }
@@ -248,7 +248,7 @@ func (contract *SalsaContract) GetUndelegateNowFee() (uint64, error) {
         return 0, err
     }
 
-    res0 := binary.BigEndian.Uint64(res.Data.ReturnData[0])
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0]).Uint64()
 
     return res0, nil
 }

@@ -29,11 +29,9 @@ func main() {
 		return
 	}
 
-	// print the wallet address
 	address, _ := w.GetAddressFromPrivateKey(privateKey)
-	fmt.Printf("address %s\n", address.AddressAsBech32String())
 
-	// create an account object for the wallet address
+	// instantiate an account object for the wallet address
 	account, err := accounts.NewAccount(address.AddressAsBech32String(), contract.GetNetworkManager(), utils.NoRefresh)
 	if err != nil {
 		fmt.Println(err)
@@ -46,8 +44,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-
-	fmt.Printf("eGLD balance %.4f\n", balance)
 
 	// retrieve the wallet's tokens balances
 	tokensBalances, err := account.GetTokensBalances()
@@ -63,9 +59,6 @@ func main() {
 		return
 	}
 
-	// print the LEGLD balance
-	fmt.Printf("LEGLD balance %.4f\n", tokensBalances[string(token)])
-
 	// get user's reserve from the contract
 	reserve, err := contract.GetUserReserveByAddress(address.AddressBytes())
 	if err != nil {
@@ -75,7 +68,10 @@ func main() {
 
 	fReserve := utils.Denominate(reserve, 18)
 
-	// print the reserve
+	// print retrieved info
+	fmt.Printf("address %s\n", account.GetAddress())
+	fmt.Printf("eGLD balance %.4f\n", balance)
+	fmt.Printf("LEGLD balance %.4f\n", tokensBalances[string(token)])
 	fmt.Printf("reserve %.2f\n", fReserve)
 
 	// add 1 eGLD reserve to the contract
