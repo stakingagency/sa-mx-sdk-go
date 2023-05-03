@@ -1,6 +1,8 @@
 package converter
 
 import (
+	"fmt"
+
 	"github.com/stakingagency/sa-mx-sdk-go/abi2go/data"
 	"github.com/stakingagency/sa-mx-sdk-go/abi2go/errors"
 )
@@ -40,6 +42,9 @@ func (conv *AbiConverter) Convert() error {
 	}
 
 	lines = append(lines, typesLines...)
+
+	lines = append(lines, []string{fmt.Sprintf("func (contract *%s) GetNetworkManager() *network.NetworkManager {",
+		conv.abi.Name), "  return contract.netMan", "}"}...)
 
 	readonlyEndpointsLines, err := conv.convertReadonlyEndpoints()
 	if err != nil {
