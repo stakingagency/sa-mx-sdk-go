@@ -27,8 +27,13 @@ func IsSimpleVariadic(s string) bool {
 	return strings.HasPrefix(s, "variadic<") && n == 1
 }
 
-func IsMultiVariadic(s string) bool {
-	return strings.HasPrefix(s, "variadic<multi<") && !IsSimpleVariadic(s)
+func IsMultiVariadic(s string, multiResult ...bool) bool {
+	isMultiVariadic := strings.HasPrefix(s, "variadic<multi<") && !IsSimpleVariadic(s)
+	if len(multiResult) > 0 && multiResult[0] {
+		isMultiVariadic = isMultiVariadic || strings.HasPrefix(s, "variadic<")
+	}
+
+	return isMultiVariadic
 }
 
 func IsMulti(s string) bool {

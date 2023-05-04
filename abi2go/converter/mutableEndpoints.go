@@ -49,7 +49,7 @@ func (conv *AbiConverter) generateMutableBody(endpoint data.AbiEndpoint) ([]stri
 	lines := make([]string, 0)
 	inputArgs := make([]string, 0)
 	for i, input := range endpoint.Inputs {
-		goType, _ := conv.abiType2goType(input.Type) // we don't care for err because it was checked in generateInputs
+		goType, _ := conv.abiType2goType(input.Type, input.MultiResult) // we don't care for err because it was checked in generateInputs
 		inputArg, err := conv.generateInputArg(input.Name, goType, i)
 		if err != nil {
 			return nil, err

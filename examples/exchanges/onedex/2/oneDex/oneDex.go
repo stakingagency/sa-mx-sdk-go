@@ -1,14 +1,14 @@
 package oneDex
 
 import (
-    "math/big"
-    "github.com/stakingagency/sa-mx-sdk-go/network"
     "github.com/stakingagency/sa-mx-sdk-go/utils"
     "errors"
     "encoding/binary"
     "encoding/hex"
     "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
+    "math/big"
+    "github.com/stakingagency/sa-mx-sdk-go/network"
 )
 
 type Address []byte
@@ -501,52 +501,34 @@ func (contract *OneDex) ViewPairs() ([]Pair, error) {
     }
 
     res0 := make([]Pair, 0)
-    for i := 0; i < len(res.Data.ReturnData); i++ {
-        idx := 0
-        ok, allOk := true, true
-        _Pair_id, idx, ok := utils.ParseUint32(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _State, idx, ok := utils.ParseByte(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Enabled, idx, ok := utils.ParseBool(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Owner, idx, ok := utils.ParsePubkey(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _First_token_id, idx, ok := utils.ParseString(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Second_token_id, idx, ok := utils.ParseString(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Lp_token_id, idx, ok := utils.ParseString(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Lp_token_decimal, idx, ok := utils.ParseUint32(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _First_token_reserve, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Second_token_reserve, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Lp_token_supply, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        _Lp_token_roles_are_set, idx, ok := utils.ParseBool(res.Data.ReturnData[i], idx)
-        allOk = allOk && ok
-        if !allOk {
-            return nil, errors.New("invalid response")
+    for i := 0; i < len(res.Data.ReturnData); i+=12 {
+        Pair_id := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+0]).Uint64())
+        State := State(big.NewInt(0).SetBytes(res.Data.ReturnData[i+1]).Uint64())
+        Enabled := big.NewInt(0).SetBytes(res.Data.ReturnData[i+2]).Uint64() == 1
+        Owner := res.Data.ReturnData[i+3]
+        First_token_id := TokenIdentifier(res.Data.ReturnData[i+4])
+        Second_token_id := TokenIdentifier(res.Data.ReturnData[i+5])
+        Lp_token_id := TokenIdentifier(res.Data.ReturnData[i+6])
+        Lp_token_decimal := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[i+7]).Uint64())
+        First_token_reserve := big.NewInt(0).SetBytes(res.Data.ReturnData[i+8])
+        Second_token_reserve := big.NewInt(0).SetBytes(res.Data.ReturnData[i+9])
+        Lp_token_supply := big.NewInt(0).SetBytes(res.Data.ReturnData[i+10])
+        Lp_token_roles_are_set := big.NewInt(0).SetBytes(res.Data.ReturnData[i+11]).Uint64() == 1
+        inner := Pair{
+            Pair_id: Pair_id,
+            State: State,
+            Enabled: Enabled,
+            Owner: Owner,
+            First_token_id: First_token_id,
+            Second_token_id: Second_token_id,
+            Lp_token_id: Lp_token_id,
+            Lp_token_decimal: Lp_token_decimal,
+            First_token_reserve: First_token_reserve,
+            Second_token_reserve: Second_token_reserve,
+            Lp_token_supply: Lp_token_supply,
+            Lp_token_roles_are_set: Lp_token_roles_are_set,
         }
-
-        _item := Pair{
-            Pair_id: _Pair_id,
-            State: State(_State),
-            Enabled: _Enabled,
-            Owner: Address(_Owner),
-            First_token_id: TokenIdentifier(_First_token_id),
-            Second_token_id: TokenIdentifier(_Second_token_id),
-            Lp_token_id: TokenIdentifier(_Lp_token_id),
-            Lp_token_decimal: _Lp_token_decimal,
-            First_token_reserve: _First_token_reserve,
-            Second_token_reserve: _Second_token_reserve,
-            Lp_token_supply: _Lp_token_supply,
-            Lp_token_roles_are_set: _Lp_token_roles_are_set,
-        }
-        res0 = append(res0, _item)
+        res0 = append(res0, inner)
     }
 
     return res0, nil

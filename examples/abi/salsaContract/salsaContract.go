@@ -1,28 +1,28 @@
 package salsaContract
 
 import (
-    "github.com/stakingagency/sa-mx-sdk-go/network"
-    "encoding/hex"
-    "github.com/stakingagency/sa-mx-sdk-go/utils"
     "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
     "encoding/binary"
     "math/big"
+    "github.com/stakingagency/sa-mx-sdk-go/network"
+    "encoding/hex"
+    "github.com/stakingagency/sa-mx-sdk-go/utils"
 )
-
-type TokenIdentifier string
 
 type Address []byte
 
-type Undelegation struct {
-    Amount *big.Int
-    Unbond_epoch uint64
-}
+type TokenIdentifier string
 
 type EsdtTokenPayment struct {
     Token_identifier TokenIdentifier
     Token_nonce uint64
     Amount *big.Int
+}
+
+type Undelegation struct {
+    Amount *big.Int
+    Unbond_epoch uint64
 }
 
 type State int
@@ -225,8 +225,8 @@ func (contract *SalsaContract) GetUsersReserves() ([]*big.Int, error) {
 
     res0 := make([]*big.Int, 0)
     for i := 0; i < len(res.Data.ReturnData); i++ {
-        _item := big.NewInt(0).SetBytes(res.Data.ReturnData[i])
-        res0 = append(res0, _item)
+        inner := big.NewInt(0).SetBytes(res.Data.ReturnData[i])
+        res0 = append(res0, inner)
     }
 
     return res0, nil

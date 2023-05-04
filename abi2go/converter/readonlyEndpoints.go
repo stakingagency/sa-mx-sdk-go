@@ -108,7 +108,7 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 	lines := make([]string, 0)
 	inputArgs := make([]string, 0)
 	for i, input := range endpoint.Inputs {
-		goType, _ := conv.abiType2goType(input.Type) // we don't care for err because it was checked in generateInputs
+		goType, _ := conv.abiType2goType(input.Type, input.MultiResult) // we don't care for err because it was checked in generateInputs
 		inputArg, err := conv.generateInputArg(input.Name, goType, i)
 		if err != nil {
 			return nil, err
@@ -144,9 +144,34 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 
 	// set output values
 	for i, output := range endpoint.Outputs {
-		oLines, err := conv.setOutput(i, output)
+		oLines, err := conv.setOutput(i, output, endpoint.Outputs)
 		if err != nil {
 			return nil, err
+		}
+
+		for l, oLine := range oLines {
+			oIdx := strings.Index(oLine, ":=")
+			if oIdx == -1 {
+				continue
+			}
+			oVariable := oLine[:oIdx]
+
+			alreadyDefined := false
+			for _, line := range lines {
+				idx := strings.Index(line, ":=")
+				if idx == -1 {
+					continue
+				}
+				variable := line[:idx]
+
+				if oVariable == variable {
+					alreadyDefined = true
+					break
+				}
+			}
+			if alreadyDefined {
+				oLines[l] = strings.Replace(oLine, ":=", "=", 1)
+			}
 		}
 
 		lines = append(lines, oLines...)
@@ -164,9 +189,9 @@ func (conv *AbiConverter) generateBody(endpoint data.AbiEndpoint) ([]string, err
 	return lines, nil
 }
 
-func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string, error) {
+func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO, allOutputs []data.AbiEndpointIO) ([]string, error) {
 	lines := make([]string, 0)
-	goType, _ := conv.abiType2goType(output.Type)
+	goType, _ := conv.abiType2goType(output.Type, output.MultiResult)
 	isArray := strings.HasPrefix(goType, "[]")
 	goType = strings.TrimPrefix(goType, "[]")
 	complexType, isComplexType := conv.complexTypes[goType]
@@ -176,30 +201,41 @@ func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string,
 		lines = append(lines, fmt.Sprintf("    %s := make([]%s, 0)", varName, goType))
 	}
 
-	if utils.IsMultiVariadic(output.Type) || utils.IsMulti(output.Type) {
-		if !isComplexType || !isArray {
+	if utils.IsMultiVariadic(output.Type, output.MultiResult) || utils.IsMulti(output.Type) {
+		if !isArray {
 			return nil, errors.ErrUnknownGoFieldType
 		}
 
-		noOfFields := len(complexType)
-		lines = append(lines, fmt.Sprintf("    for i := 0; i < len(res.Data.ReturnData); i+=%v {", noOfFields))
-		for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
-			typeName := complexType[fieldIdx][0]
-			innerType := complexType[fieldIdx][1]
-			dataSource := fmt.Sprintf("res.Data.ReturnData[i+%v]", fieldIdx)
-			parsedLines, err := conv.parseAnyType(typeName, innerType, typeName, dataSource, "        ", true, output)
+		if isComplexType {
+			noOfFields := len(complexType)
+			lines = append(lines, fmt.Sprintf("    for i := 0; i < len(res.Data.ReturnData); i+=%v {", noOfFields))
+			for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
+				typeName := complexType[fieldIdx][0]
+				innerType := complexType[fieldIdx][1]
+				dataSource := fmt.Sprintf("res.Data.ReturnData[i+%v]", fieldIdx)
+				parsedLines, err := conv.parseAnyType(typeName, innerType, typeName, dataSource, "        ", true, output, allOutputs)
+				if err != nil {
+					return nil, err
+				}
+
+				lines = append(lines, parsedLines...)
+			}
+			lines = append(lines, fmt.Sprintf("        inner := %s{", goType))
+			for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
+				typeName := complexType[fieldIdx][0]
+				lines = append(lines, fmt.Sprintf("            %s: %s,", typeName, typeName))
+			}
+			lines = append(lines, "        }")
+		} else {
+			lines = append(lines, "    for i := 0; i < len(res.Data.ReturnData); i++ {")
+			dataSource := "res.Data.ReturnData[i]"
+			parsedLines, err := conv.parseAnyType(output.Name, goType, "inner", dataSource, "        ", true, output, allOutputs)
 			if err != nil {
 				return nil, err
 			}
 
 			lines = append(lines, parsedLines...)
 		}
-		lines = append(lines, fmt.Sprintf("        inner := %s{", goType))
-		for fieldIdx := 0; fieldIdx < noOfFields; fieldIdx++ {
-			typeName := complexType[fieldIdx][0]
-			lines = append(lines, fmt.Sprintf("            %s: %s,", typeName, typeName))
-		}
-		lines = append(lines, "        }")
 		lines = append(lines, fmt.Sprintf("        %s = append(%s, inner)", varName, varName))
 		lines = append(lines, "    }")
 
@@ -213,7 +249,7 @@ func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string,
 
 		lines = append(lines, "    for i := 0; i < len(res.Data.ReturnData); i++ {")
 		dataSource := "res.Data.ReturnData[i]"
-		parsedLines, err := conv.parseAnyType(output.Name, goType, "_item", dataSource, "        ", true, output)
+		parsedLines, err := conv.parseAnyType(output.Name, goType, "_item", dataSource, "        ", true, output, allOutputs)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +275,7 @@ func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string,
 		lines = append(lines, iLines...)
 		lines = append(lines, "    for {")
 
-		cLines, err := conv.parseComplexType(complexType, output.Name, goType, "_item", dataSource, "        ", false, "break", output)
+		cLines, err := conv.parseComplexType(complexType, output.Name, goType, "_item", dataSource, "        ", false, "break", output, allOutputs)
 		if err != nil {
 			return nil, err
 		}
@@ -252,7 +288,7 @@ func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string,
 	}
 
 	dataSource := fmt.Sprintf("res.Data.ReturnData[%v]", i)
-	parsedLines, err := conv.parseAnyType(output.Name, goType, varName, dataSource, "    ", true, output)
+	parsedLines, err := conv.parseAnyType(output.Name, goType, varName, dataSource, "    ", true, output, allOutputs)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +298,7 @@ func (conv *AbiConverter) setOutput(i int, output data.AbiEndpointIO) ([]string,
 	return lines, nil
 }
 
-func (conv *AbiConverter) parseAnyType(typeName string, goType string, varName string, dataSource string, indent string, newVars bool, output data.AbiEndpointIO) ([]string, error) {
+func (conv *AbiConverter) parseAnyType(typeName string, goType string, varName string, dataSource string, indent string, newVars bool, output data.AbiEndpointIO, allOutputs []data.AbiEndpointIO) ([]string, error) {
 	lines := make([]string, 0)
 	switch goType {
 	case "uint64":
@@ -301,7 +337,7 @@ func (conv *AbiConverter) parseAnyType(typeName string, goType string, varName s
 			}
 
 			lines = append(lines, iLines...)
-			cLines, err := conv.parseComplexType(complexType, typeName, goType, varName, dataSource, indent, newVars, "return", output)
+			cLines, err := conv.parseComplexType(complexType, typeName, goType, varName, dataSource, indent, newVars, "return", output, allOutputs)
 			if err != nil {
 				return nil, err
 			}
@@ -344,7 +380,7 @@ func (conv *AbiConverter) instantiateParser(goType string, allVars bool, indent 
 	return lines, nil
 }
 
-func (conv *AbiConverter) parseArray(typeName string, goType string, varName string, dataSource string, indent string, newVars bool, notAllOk string, output data.AbiEndpointIO, actualLines []string) ([]string, error) {
+func (conv *AbiConverter) parseArray(typeName string, goType string, varName string, dataSource string, indent string, newVars bool, notAllOk string, output data.AbiEndpointIO, allOutputs []data.AbiEndpointIO, actualLines []string) ([]string, error) {
 	isArray := strings.HasPrefix(goType, "[]")
 	if !isArray {
 		return nil, errors.ErrNotImplemented
@@ -382,7 +418,7 @@ func (conv *AbiConverter) parseArray(typeName string, goType string, varName str
 		complexType = [][2]string{{"item", goType}}
 		lines = append(lines, indent+"    var _item "+goType)
 	}
-	cLines, err := conv.parseComplexType(complexType, output.Name, goType, "item", dataSource, indent+"    ", false, "return", output)
+	cLines, err := conv.parseComplexType(complexType, output.Name, goType, "item", dataSource, indent+"    ", false, "return", output, allOutputs)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +438,8 @@ func (conv *AbiConverter) parseArray(typeName string, goType string, varName str
 	return lines, nil
 }
 
-func (conv *AbiConverter) parseComplexType(complexType [][2]string, typeName string, goType string, varName string, dataSource string, indent string, newVars bool, notAllOk string, output data.AbiEndpointIO) ([]string, error) {
+func (conv *AbiConverter) parseComplexType(complexType [][2]string, typeName string, goType string, varName string, dataSource string, indent string,
+	newVars bool, notAllOk string, output data.AbiEndpointIO, allOutputs []data.AbiEndpointIO) ([]string, error) {
 	attribute := ""
 	if newVars {
 		attribute = ":"
@@ -418,14 +455,14 @@ func (conv *AbiConverter) parseComplexType(complexType [][2]string, typeName str
 		}
 
 		if parseType == "ComplexType" {
-			ctLines, err := conv.parseComplexType(conv.complexTypes[fieldType], fieldName, fieldType, "_"+fieldName, dataSource, indent, newVars, notAllOk, output)
+			ctLines, err := conv.parseComplexType(conv.complexTypes[fieldType], fieldName, fieldType, "_"+fieldName, dataSource, indent, newVars, notAllOk, output, allOutputs)
 			if err != nil {
 				return nil, err
 			}
 
 			lines = append(lines, ctLines...)
 		} else if parseType == "Array" {
-			aLines, err := conv.parseArray(fieldName, fieldType, "_"+fieldName, dataSource, indent, newVars, notAllOk, output, lines)
+			aLines, err := conv.parseArray(fieldName, fieldType, "_"+fieldName, dataSource, indent, newVars, notAllOk, output, allOutputs, lines)
 			if err != nil {
 				return nil, err
 			}
@@ -444,7 +481,7 @@ func (conv *AbiConverter) parseComplexType(complexType [][2]string, typeName str
 	case "break":
 		lines = append(lines, fmt.Sprintf("%s    break", indent))
 	case "return":
-		errReturn, err := conv.generateErrorReturn([]data.AbiEndpointIO{output})
+		errReturn, err := conv.generateErrorReturn(allOutputs)
 		if err != nil {
 			return nil, err
 		}
@@ -476,7 +513,7 @@ func (conv *AbiConverter) generateErrorReturn(outputs []data.AbiEndpointIO) (str
 	line := ""
 	for i := 0; i < len(outputs); i++ {
 		output := outputs[i]
-		goType, _ := conv.abiType2goType(output.Type)
+		goType, _ := conv.abiType2goType(output.Type, output.MultiResult)
 		def := conv.getDefaultTypeValue(goType)
 		if conv.abi.Types[output.Type] != nil && conv.abi.Types[output.Type].Type == "enum" {
 			def = "0"
@@ -518,7 +555,7 @@ func (conv *AbiConverter) generateOutputs(outputs []data.AbiEndpointIO) (string,
 		res += "("
 	}
 	for i, output := range outputs {
-		goType, err := conv.abiType2goType(output.Type)
+		goType, err := conv.abiType2goType(output.Type, output.MultiResult)
 		if err != nil {
 			return "", err
 		}

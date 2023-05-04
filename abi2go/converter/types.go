@@ -47,7 +47,7 @@ func (conv *AbiConverter) convertTypes() ([]string, error) {
 	return lines, nil
 }
 
-func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
+func (conv *AbiConverter) abiType2goType(abiType string, multiResult ...bool) (string, error) {
 	// TODO: what is Option ?
 	if strings.HasPrefix(abiType, "Option<") {
 		abiType = strings.TrimPrefix(abiType, "Option<")
@@ -127,7 +127,7 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		return innerType, nil
 	}
 
-	if utils.IsMultiVariadic(abiType) || utils.IsMulti(abiType) {
+	if utils.IsMultiVariadic(abiType, multiResult...) || utils.IsMulti(abiType) {
 		idx := strings.Index(abiType, "<")
 		innerTypes := string([]byte(abiType)[idx+1:])
 		innerTypes = strings.TrimSuffix(innerTypes, ">")
@@ -138,8 +138,23 @@ func (conv *AbiConverter) abiType2goType(abiType string) (string, error) {
 		}
 
 		mapTypes := utils.SplitTypes(innerTypes)
+		for i := 0; i < len(mapTypes); i++ {
+			mapType := mapTypes[i]
+			if strings.Contains(mapType, "<") && strings.HasSuffix(mapType, ">") {
+				idx = strings.Index(mapType, "<")
+				mapType = string([]byte(mapType)[idx+1:])
+				mapType = strings.TrimSuffix(mapType, ">")
+				innerMapTypes := utils.SplitTypes(mapType)
+				innerTypeName, err := conv.getOrCreateComplexType(innerMapTypes)
+				if err != nil {
+					return "", errors.ErrUnknownAbiFieldType
+				}
+
+				mapTypes[i] = innerTypeName
+			}
+		}
 		if len(mapTypes) < 2 {
-			return "", errors.ErrUnknownAbiFieldType
+			return "[]" + mapTypes[0], nil
 		}
 
 		typeName, err := conv.getOrCreateComplexType(mapTypes)
