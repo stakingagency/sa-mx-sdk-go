@@ -75,9 +75,12 @@ func main() {
 	fmt.Printf("reserve %.2f\n", fReserve)
 
 	// add 1 eGLD reserve to the contract
+	fmt.Print("adding 1 eGLD reserve... ")
 	err = contract.AddReserve(privateKey, 1, 10000000, nil, utils.AutoNonce)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	fmt.Println("done!")
 }

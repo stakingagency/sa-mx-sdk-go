@@ -8,12 +8,14 @@ require (
 	github.com/multiversx/mx-chain-crypto-go v1.2.6
 	github.com/multiversx/mx-chain-logger-go v1.0.11
 	github.com/multiversx/mx-sdk-go v1.2.7
+	github.com/urfave/cli v1.22.10
 	golang.org/x/crypto v0.3.0
 	golang.org/x/net v0.2.0
 )
 
 require (
 	github.com/btcsuite/btcd/btcutil v1.1.3 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/denisbrodbeck/machineid v1.0.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -30,6 +32,8 @@ require (
 	github.com/onsi/gomega v1.13.0 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.3 // indirect
+	github.com/russross/blackfriday/v2 v2.0.1 // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
