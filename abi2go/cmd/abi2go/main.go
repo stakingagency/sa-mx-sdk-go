@@ -44,7 +44,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		abiFileFlag,
 	}
-	app.Version = "v0.0.1"
+	app.Version = "v0.0.2"
 	app.Authors = []cli.Author{
 		{
 			Name:  "Staking Agency",
