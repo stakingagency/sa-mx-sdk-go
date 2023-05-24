@@ -1,6 +1,7 @@
 package salsaContract
 
 import (
+    "errors"
     "github.com/stakingagency/sa-mx-sdk-go/data"
     "strings"
     "encoding/binary"
@@ -98,6 +99,17 @@ func (contract *SalsaContract) GetProviderAddress() (Address, error) {
     return res0, nil
 }
 
+func (contract *SalsaContract) GetUnbondPeriod() (uint64, error) {
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUnbondPeriod", nil)
+    if err != nil {
+        return 0, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0]).Uint64()
+
+    return res0, nil
+}
+
 func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegation, error) {
     _args := make([]string, 0)
     _args = append(_args, hex.EncodeToString(user))
@@ -107,17 +119,15 @@ func (contract *SalsaContract) GetUserUndelegations(user Address) ([]Undelegatio
     }
 
     res0 := make([]Undelegation, 0)
+    for i := 0; i < len(res.Data.ReturnData); i++ {
         idx := 0
         ok, allOk := true, true
-        var _Amount *big.Int
-        var _Unbond_epoch uint64
-    for {
-        _Amount, idx, ok = utils.ParseBigInt(res.Data.ReturnData[0], idx)
+        _Amount, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
         allOk = allOk && ok
-        _Unbond_epoch, idx, ok = utils.ParseUint64(res.Data.ReturnData[0], idx)
+        _Unbond_epoch, idx, ok := utils.ParseUint64(res.Data.ReturnData[i], idx)
         allOk = allOk && ok
         if !allOk {
-            break
+            return nil, errors.New("invalid response")
         }
 
         _item := Undelegation{
@@ -152,8 +162,58 @@ func (contract *SalsaContract) GetUserWithdrawnEgld() (*big.Int, error) {
     return res0, nil
 }
 
+func (contract *SalsaContract) GetTotalWithdrawnEgld() (*big.Int, error) {
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getTotalWithdrawnEgld", nil)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0])
+
+    return res0, nil
+}
+
+func (contract *SalsaContract) GetTotalUserUndelegations() ([]Undelegation, error) {
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getTotalUserUndelegations", nil)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := make([]Undelegation, 0)
+    for i := 0; i < len(res.Data.ReturnData); i++ {
+        idx := 0
+        ok, allOk := true, true
+        _Amount, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
+        allOk = allOk && ok
+        _Unbond_epoch, idx, ok := utils.ParseUint64(res.Data.ReturnData[i], idx)
+        allOk = allOk && ok
+        if !allOk {
+            return nil, errors.New("invalid response")
+        }
+
+        _item := Undelegation{
+            Amount: _Amount,
+            Unbond_epoch: _Unbond_epoch,
+        }
+        res0 = append(res0, _item)
+    }
+
+    return res0, nil
+}
+
 func (contract *SalsaContract) GetEgldReserve() (*big.Int, error) {
     res, err := contract.netMan.QuerySC(contract.contractAddress, "getEgldReserve", nil)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0])
+
+    return res0, nil
+}
+
+func (contract *SalsaContract) GetReservePoints() (*big.Int, error) {
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReservePoints", nil)
     if err != nil {
         return nil, err
     }
@@ -181,17 +241,15 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
     }
 
     res0 := make([]Undelegation, 0)
+    for i := 0; i < len(res.Data.ReturnData); i++ {
         idx := 0
         ok, allOk := true, true
-        var _Amount *big.Int
-        var _Unbond_epoch uint64
-    for {
-        _Amount, idx, ok = utils.ParseBigInt(res.Data.ReturnData[0], idx)
+        _Amount, idx, ok := utils.ParseBigInt(res.Data.ReturnData[i], idx)
         allOk = allOk && ok
-        _Unbond_epoch, idx, ok = utils.ParseUint64(res.Data.ReturnData[0], idx)
+        _Unbond_epoch, idx, ok := utils.ParseUint64(res.Data.ReturnData[i], idx)
         allOk = allOk && ok
         if !allOk {
-            break
+            return nil, errors.New("invalid response")
         }
 
         _item := Undelegation{
@@ -204,38 +262,10 @@ func (contract *SalsaContract) GetReserveUndelegations() ([]Undelegation, error)
     return res0, nil
 }
 
-func (contract *SalsaContract) GetReserverID(user Address) (uint32, error) {
+func (contract *SalsaContract) GetUsersReservePoints(user Address) (*big.Int, error) {
     _args := make([]string, 0)
     _args = append(_args, hex.EncodeToString(user))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReserverID", _args)
-    if err != nil {
-        return 0, err
-    }
-
-    res0 := uint32(big.NewInt(0).SetBytes(res.Data.ReturnData[0]).Uint64())
-
-    return res0, nil
-}
-
-func (contract *SalsaContract) GetUsersReserves() ([]*big.Int, error) {
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUsersReserves", nil)
-    if err != nil {
-        return nil, err
-    }
-
-    res0 := make([]*big.Int, 0)
-    for i := 0; i < len(res.Data.ReturnData); i++ {
-        inner := big.NewInt(0).SetBytes(res.Data.ReturnData[i])
-        res0 = append(res0, inner)
-    }
-
-    return res0, nil
-}
-
-func (contract *SalsaContract) GetUserReserveByAddress(user Address) (*big.Int, error) {
-    _args := make([]string, 0)
-    _args = append(_args, hex.EncodeToString(user))
-    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserReserveByAddress", _args)
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUsersReservePoints", _args)
     if err != nil {
         return nil, err
     }
@@ -252,6 +282,45 @@ func (contract *SalsaContract) GetUndelegateNowFee() (uint64, error) {
     }
 
     res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0]).Uint64()
+
+    return res0, nil
+}
+
+func (contract *SalsaContract) GetReservePointsAmount(egld_amount *big.Int) (*big.Int, error) {
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(egld_amount.Bytes()))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReservePointsAmount", _args)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0])
+
+    return res0, nil
+}
+
+func (contract *SalsaContract) GetReserveEgldAmount(points_amount *big.Int) (*big.Int, error) {
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(points_amount.Bytes()))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getReserveEgldAmount", _args)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0])
+
+    return res0, nil
+}
+
+func (contract *SalsaContract) GetUserReserve(user Address) (*big.Int, error) {
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(user))
+    res, err := contract.netMan.QuerySC(contract.contractAddress, "getUserReserve", _args)
+    if err != nil {
+        return nil, err
+    }
+
+    res0 := big.NewInt(0).SetBytes(res.Data.ReturnData[0])
 
     return res0, nil
 }
@@ -344,8 +413,10 @@ func (contract *SalsaContract) RemoveReserve(_pk []byte, _value float64, _gasLim
     return nil
 }
 
-func (contract *SalsaContract) UnDelegateNow(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64) error {
-    dataField := hex.EncodeToString([]byte("unDelegateNow"))
+func (contract *SalsaContract) UnDelegateNow(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, min_amount_out *big.Int) error {
+    _args := make([]string, 0)
+    _args = append(_args, hex.EncodeToString(min_amount_out.Bytes()))
+    dataField := hex.EncodeToString([]byte("unDelegateNow")) + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendEsdtTransaction(_pk, contract.contractAddress, _value, _gasLimit, _token, dataField, _nonce)
     if err != nil {
         return err
@@ -359,8 +430,8 @@ func (contract *SalsaContract) UnDelegateNow(_pk []byte, _value float64, _gasLim
     return nil
 }
 
-func (contract *SalsaContract) UndelegateReserves(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64) error {
-    dataField := "undelegateReserves"
+func (contract *SalsaContract) UnDelegateAll(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64) error {
+    dataField := "unDelegateAll"
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -391,6 +462,21 @@ func (contract *SalsaContract) Compound(_pk []byte, _value float64, _gasLimit ui
 
 func (contract *SalsaContract) WithdrawAll(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64) error {
     dataField := "withdrawAll"
+    hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
+    if err != nil {
+        return err
+    }
+
+    err = contract.netMan.GetTxResult(hash)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (contract *SalsaContract) ComputeWithdrawn(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64) error {
+    dataField := "computeWithdrawn"
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err
@@ -463,6 +549,26 @@ func (contract *SalsaContract) SetProviderAddress(_pk []byte, _value float64, _g
     _args := make([]string, 0)
     _args = append(_args, hex.EncodeToString(address))
     dataField := "setProviderAddress" + "@" + strings.Join(_args, "@")
+    hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
+    if err != nil {
+        return err
+    }
+
+    err = contract.netMan.GetTxResult(hash)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+// only owner
+func (contract *SalsaContract) SetUnbondPeriod(_pk []byte, _value float64, _gasLimit uint64, _token *data.ESDT, _nonce uint64, period uint64) error {
+    _args := make([]string, 0)
+    bytes064 := make([]byte, 8)
+    binary.BigEndian.PutUint64(bytes064, period)
+    _args = append(_args, hex.EncodeToString(bytes064))
+    dataField := "setUnbondPeriod" + "@" + strings.Join(_args, "@")
     hash, err := contract.netMan.SendTransaction(_pk, contract.contractAddress, _value, _gasLimit, dataField, _nonce)
     if err != nil {
         return err

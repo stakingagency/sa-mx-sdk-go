@@ -30,7 +30,7 @@ func IsSimpleVariadic(s string) bool {
 func IsMultiVariadic(s string, multiResult ...bool) bool {
 	isMultiVariadic := strings.HasPrefix(s, "variadic<multi<") && !IsSimpleVariadic(s)
 	if len(multiResult) > 0 && multiResult[0] {
-		isMultiVariadic = isMultiVariadic || strings.HasPrefix(s, "variadic<")
+		isMultiVariadic = isMultiVariadic && strings.HasPrefix(s, "variadic<")
 	}
 
 	return isMultiVariadic

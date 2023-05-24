@@ -60,7 +60,7 @@ func main() {
 	}
 
 	// get user's reserve from the contract
-	reserve, err := contract.GetUserReserveByAddress(address.AddressBytes())
+	reserve, err := contract.GetUserReserve(address.AddressBytes())
 	if err != nil {
 		fmt.Println(err)
 		return
