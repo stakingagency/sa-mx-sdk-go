@@ -1,19 +1,19 @@
 {
     "buildInfo": {
         "rustc": {
-            "version": "1.71.0-nightly",
-            "commitHash": "7f94b314cead7059a71a265a8b64905ef2511796",
-            "commitDate": "2023-04-23",
+            "version": "1.70.0-nightly",
+            "commitHash": "cf7ada217c8ac63367b184afd9fffaff30f6ed44",
+            "commitDate": "2023-04-03",
             "channel": "Nightly",
-            "short": "rustc 1.71.0-nightly (7f94b314c 2023-04-23)"
+            "short": "rustc 1.70.0-nightly (cf7ada217 2023-04-03)"
         },
         "contractCrate": {
             "name": "salsa",
-            "version": "0.0.1"
+            "version": "0.0.2"
         },
         "framework": {
             "name": "multiversx-sc",
-            "version": "0.41.1"
+            "version": "0.41.3"
         }
     },
     "name": "SalsaContract",
@@ -28,7 +28,13 @@
             "payableInTokens": [
                 "EGLD"
             ],
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "with_custody",
+                    "type": "optional<bool>",
+                    "multi_arg": true
+                }
+            ],
             "outputs": [
                 {
                     "type": "EsdtTokenPayment"
@@ -41,13 +47,39 @@
             "payableInTokens": [
                 "*"
             ],
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "undelegate_amount",
+                    "type": "optional<BigUint>",
+                    "multi_arg": true
+                }
+            ],
             "outputs": []
         },
         {
             "name": "withdraw",
             "mutability": "mutable",
             "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "addToCustody",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "removeFromCustody",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ],
             "outputs": []
         },
         {
@@ -80,32 +112,133 @@
                 {
                     "name": "min_amount_out",
                     "type": "BigUint"
+                },
+                {
+                    "name": "undelegate_amount",
+                    "type": "optional<BigUint>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
         },
         {
-            "name": "unDelegateAll",
+            "name": "unDelegateKnight",
             "mutability": "mutable",
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "undelegate_amount",
+                    "type": "BigUint"
+                }
+            ],
             "outputs": []
         },
         {
-            "name": "compound",
+            "name": "unDelegateNowKnight",
             "mutability": "mutable",
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "min_amount_out",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "undelegate_amount",
+                    "type": "BigUint"
+                }
+            ],
             "outputs": []
         },
         {
-            "name": "withdrawAll",
+            "name": "withdrawKnight",
             "mutability": "mutable",
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
             "outputs": []
         },
         {
-            "name": "computeWithdrawn",
+            "name": "removeReserveKnight",
             "mutability": "mutable",
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "unDelegateHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "undelegate_amount",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "unDelegateNowHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "min_amount_out",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "undelegate_amount",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "withdrawHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "removeReserveHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                },
+                {
+                    "name": "amount",
+                    "type": "BigUint"
+                }
+            ],
             "outputs": []
         },
         {
@@ -408,11 +541,400 @@
                     "type": "BigUint"
                 }
             ]
+        },
+        {
+            "name": "setWrapSC",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "getLegldInCustody",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserDelegation",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "name": "getUserKnight",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Knight"
+                }
+            ]
+        },
+        {
+            "name": "getKnightUsers",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "knight",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "variadic<Address>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getUserHeir",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Heir"
+                }
+            ]
+        },
+        {
+            "name": "getHeirUsers",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "heir",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "variadic<Address>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getContractInfo",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "ContractInfo"
+                }
+            ]
+        },
+        {
+            "name": "getUserInfo",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "UserInfo"
+                }
+            ]
+        },
+        {
+            "name": "unDelegateAll",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "compound",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "withdrawAll",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "computeWithdrawn",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "setArbitrageActive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "setArbitrageInactive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "getArbitrageState",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "State"
+                }
+            ]
+        },
+        {
+            "name": "setOnedexArbitrageActive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "setOnedexArbitrageInactive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "getOnedexArbitrageState",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "State"
+                }
+            ]
+        },
+        {
+            "name": "setOnedexSC",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setOnedexPairId",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "id",
+                    "type": "u32"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setXexchangeArbitrageActive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "setXexchangeArbitrageInactive",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "getXexchangeArbitrageState",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "State"
+                }
+            ]
+        },
+        {
+            "name": "setXexchangeSC",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setKnight",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "knight",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "cancelKnight",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "activateKnight",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "deactivateKnight",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "confirmKnight",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "removeKnight",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "setHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "heir",
+                    "type": "Address"
+                },
+                {
+                    "name": "inheritance_epochs",
+                    "type": "u64"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "cancelHeir",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "name": "removeHeir",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
         }
     ],
     "events": [],
     "hasCallback": true,
     "types": {
+        "ContractInfo": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "state",
+                    "type": "State"
+                },
+                {
+                    "name": "liquid_token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "liquid_token_supply",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "total_egld_staked",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "provider_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "egld_reserve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "available_egld_reserve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "unbond_period",
+                    "type": "u64"
+                },
+                {
+                    "name": "undelegate_now_fee",
+                    "type": "u64"
+                },
+                {
+                    "name": "token_price",
+                    "type": "BigUint"
+                }
+            ]
+        },
         "EsdtTokenPayment": {
             "type": "struct",
             "fields": [
@@ -427,6 +949,57 @@
                 {
                     "name": "amount",
                     "type": "BigUint"
+                }
+            ]
+        },
+        "Heir": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                },
+                {
+                    "name": "inheritance_epochs",
+                    "type": "u64"
+                },
+                {
+                    "name": "last_accessed_epoch",
+                    "type": "u64"
+                }
+            ]
+        },
+        "Knight": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "address",
+                    "type": "Address"
+                },
+                {
+                    "name": "state",
+                    "type": "KnightState"
+                }
+            ]
+        },
+        "KnightState": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "Undefined",
+                    "discriminant": 0
+                },
+                {
+                    "name": "InactiveKnight",
+                    "discriminant": 1
+                },
+                {
+                    "name": "PendingConfirmation",
+                    "discriminant": 2
+                },
+                {
+                    "name": "ActiveKnight",
+                    "discriminant": 3
                 }
             ]
         },
@@ -453,6 +1026,43 @@
                 {
                     "name": "unbond_epoch",
                     "type": "u64"
+                }
+            ]
+        },
+        "UserInfo": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "undelegations",
+                    "type": "List<Undelegation>"
+                },
+                {
+                    "name": "reserve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "add_reserve_epoch",
+                    "type": "u64"
+                },
+                {
+                    "name": "delegation",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "knight",
+                    "type": "Knight"
+                },
+                {
+                    "name": "knight_users",
+                    "type": "List<Knight>"
+                },
+                {
+                    "name": "heir",
+                    "type": "Heir"
+                },
+                {
+                    "name": "heir_users",
+                    "type": "List<Heir>"
                 }
             ]
         }
