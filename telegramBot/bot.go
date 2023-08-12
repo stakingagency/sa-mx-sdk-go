@@ -1,8 +1,7 @@
 package telegramBot
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	logger "github.com/multiversx/mx-chain-logger-go"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type (
@@ -21,8 +20,6 @@ type TelegramBot struct {
 	callbackReceivedCallback       TelegramCallbackQueryCallbackFunc
 }
 
-var log = logger.GetOrCreate("telegramBot")
-
 func NewTelegramBot(botToken string, active bool) (*TelegramBot, error) {
 	tgBot, err := tgbotapi.NewBotAPI(botToken)
 	if err != nil {
@@ -31,11 +28,7 @@ func NewTelegramBot(botToken string, active bool) (*TelegramBot, error) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	updates, err := tgBot.GetUpdatesChan(u)
-	if err != nil {
-		log.Error("can not get Telegram bot updates", "error", err)
-		return nil, err
-	}
+	updates := tgBot.GetUpdatesChan(u)
 
 	b := &TelegramBot{
 		tgBot:                          tgBot,
