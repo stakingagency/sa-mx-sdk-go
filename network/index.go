@@ -141,6 +141,18 @@ func (nm *NetworkManager) GetTxOperations(hash string) ([]*data.IndexerEntry, er
 	return res, nil
 }
 
+func (nm *NetworkManager) GetTxScResults(hash string) ([]*data.IndexerEntry, error) {
+	query := make(map[string]map[string]string)
+	query["match"] = make(map[string]string)
+	query["match"]["originalTxHash"] = hash
+	res, err := nm.SearchIndexer("scresults", query, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (nm *NetworkManager) GetTxResult(hash string) error {
 	start := time.Now().Unix()
 	for {

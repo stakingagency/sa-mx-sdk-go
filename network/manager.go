@@ -3,6 +3,7 @@ package network
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -116,6 +117,10 @@ func (nm *NetworkManager) QuerySC(scAddress, funcName string, args []string) (*s
 		return nil, err
 	}
 
+	if res.Data.ReturnMessage != "" {
+		return nil, errors.New(res.Data.ReturnMessage)
+	}
+
 	return res, nil
 }
 
@@ -123,6 +128,10 @@ func (nm *NetworkManager) QueryScIntResult(scAddress, funcName string, args []st
 	res, err := nm.QuerySC(scAddress, funcName, args)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.Data.ReturnMessage != "" {
+		return nil, errors.New(res.Data.ReturnMessage)
 	}
 
 	if len(res.Data.ReturnData) == 0 {
@@ -138,6 +147,10 @@ func (nm *NetworkManager) QueryScMultiIntResult(scAddress, funcName string, args
 		return nil, err
 	}
 
+	if res.Data.ReturnMessage != "" {
+		return nil, errors.New(res.Data.ReturnMessage)
+	}
+
 	ints := make([]*big.Int, 0)
 	for _, b := range res.Data.ReturnData {
 		ints = append(ints, big.NewInt(0).SetBytes(b))
@@ -150,6 +163,10 @@ func (nm *NetworkManager) QueryScAddressResult(scAddress, funcName string, args 
 	res, err := nm.QuerySC(scAddress, funcName, args)
 	if err != nil {
 		return "", err
+	}
+
+	if res.Data.ReturnMessage != "" {
+		return "", errors.New(res.Data.ReturnMessage)
 	}
 
 	if len(res.Data.ReturnData) == 0 {
