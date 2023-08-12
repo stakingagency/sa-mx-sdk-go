@@ -13,12 +13,17 @@
         },
         "framework": {
             "name": "multiversx-sc",
-            "version": "0.39.7"
+            "version": "0.41.1"
         }
     },
     "name": "OneDex",
     "constructor": {
-        "inputs": [],
+        "inputs": [
+            {
+                "name": "wegld_id",
+                "type": "TokenIdentifier"
+            }
+        ],
         "outputs": []
     },
     "endpoints": [
@@ -27,22 +32,6 @@
             "onlyOwner": true,
             "mutability": "mutable",
             "inputs": [
-                {
-                    "name": "wegld_token_id",
-                    "type": "TokenIdentifier"
-                },
-                {
-                    "name": "usdc_token_id",
-                    "type": "TokenIdentifier"
-                },
-                {
-                    "name": "busd_token_id",
-                    "type": "TokenIdentifier"
-                },
-                {
-                    "name": "usdt_token_id",
-                    "type": "TokenIdentifier"
-                },
                 {
                     "name": "total_fee_percent",
                     "type": "u64"
@@ -175,54 +164,40 @@
             "outputs": []
         },
         {
-            "docs": [
-                "\\n     * WEGLD TokenIdentifier\\n     "
-            ],
-            "name": "getWegldTokenId",
-            "mutability": "readonly",
-            "inputs": [],
-            "outputs": [
+            "name": "addMainPair",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
                 {
+                    "name": "token",
                     "type": "TokenIdentifier"
                 }
-            ]
+            ],
+            "outputs": []
+        },
+        {
+            "name": "removeMainPair",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "token",
+                    "type": "TokenIdentifier"
+                }
+            ],
+            "outputs": []
         },
         {
             "docs": [
-                "\\n     * USDC TokenIdentifier\\n     "
+                "\\n     * Main Pair Tokens: <token_id, decimals>\\n     "
             ],
-            "name": "getUsdcTokenId",
+            "name": "getMainPairTokens",
             "mutability": "readonly",
             "inputs": [],
             "outputs": [
                 {
-                    "type": "TokenIdentifier"
-                }
-            ]
-        },
-        {
-            "docs": [
-                "\\n     * BUSD TokenIdentifier\\n     "
-            ],
-            "name": "getBusdTokenId",
-            "mutability": "readonly",
-            "inputs": [],
-            "outputs": [
-                {
-                    "type": "TokenIdentifier"
-                }
-            ]
-        },
-        {
-            "docs": [
-                "\\n     * USDT TokenIdentifier\\n     "
-            ],
-            "name": "getUsdtTokenId",
-            "mutability": "readonly",
-            "inputs": [],
-            "outputs": [
-                {
-                    "type": "TokenIdentifier"
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_result": true
                 }
             ]
         },

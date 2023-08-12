@@ -1,11 +1,11 @@
 {
     "buildInfo": {
         "rustc": {
-            "version": "1.70.0-nightly",
-            "commitHash": "cf7ada217c8ac63367b184afd9fffaff30f6ed44",
-            "commitDate": "2023-04-03",
+            "version": "1.71.0-nightly",
+            "commitHash": "7f94b314cead7059a71a265a8b64905ef2511796",
+            "commitDate": "2023-04-23",
             "channel": "Nightly",
-            "short": "rustc 1.70.0-nightly (cf7ada217 2023-04-03)"
+            "short": "rustc 1.71.0-nightly (7f94b314c 2023-04-23)"
         },
         "contractCrate": {
             "name": "salsa",
@@ -33,13 +33,14 @@
                     "name": "with_custody",
                     "type": "optional<bool>",
                     "multi_arg": true
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
-            "outputs": [
-                {
-                    "type": "EsdtTokenPayment"
-                }
-            ]
+            "outputs": []
         },
         {
             "name": "unDelegate",
@@ -51,6 +52,11 @@
                 {
                     "name": "undelegate_amount",
                     "type": "optional<BigUint>",
+                    "multi_arg": true
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
                     "multi_arg": true
                 }
             ],
@@ -117,6 +123,11 @@
                     "name": "undelegate_amount",
                     "type": "optional<BigUint>",
                     "multi_arg": true
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
@@ -132,6 +143,11 @@
                 {
                     "name": "undelegate_amount",
                     "type": "BigUint"
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
@@ -151,6 +167,11 @@
                 {
                     "name": "undelegate_amount",
                     "type": "BigUint"
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
@@ -192,6 +213,11 @@
                 {
                     "name": "undelegate_amount",
                     "type": "BigUint"
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
@@ -211,6 +237,11 @@
                 {
                     "name": "undelegate_amount",
                     "type": "BigUint"
+                },
+                {
+                    "name": "without_arbitrage",
+                    "type": "optional<bool>",
+                    "multi_arg": true
                 }
             ],
             "outputs": []
@@ -885,6 +916,12 @@
                 }
             ],
             "outputs": []
+        },
+        {
+            "name": "updateLastAccessed",
+            "mutability": "mutable",
+            "inputs": [],
+            "outputs": []
         }
     ],
     "events": [],
@@ -931,23 +968,6 @@
                 },
                 {
                     "name": "token_price",
-                    "type": "BigUint"
-                }
-            ]
-        },
-        "EsdtTokenPayment": {
-            "type": "struct",
-            "fields": [
-                {
-                    "name": "token_identifier",
-                    "type": "TokenIdentifier"
-                },
-                {
-                    "name": "token_nonce",
-                    "type": "u64"
-                },
-                {
-                    "name": "amount",
                     "type": "BigUint"
                 }
             ]

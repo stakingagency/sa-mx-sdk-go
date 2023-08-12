@@ -183,6 +183,33 @@ func (acc *Account) GetTokensBalances() (map[string]float64, error) {
 	return res, nil
 }
 
+func (acc *Account) GetRawTokensBalances() (map[string]*big.Int, error) {
+	prefix := hex.EncodeToString([]byte("ELRONDesdt"))
+	keys, err := acc.GetAccountKeys(prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]*big.Int)
+	for key, value := range keys {
+		sTicker := strings.TrimPrefix(key, prefix)
+		bTicker, err := hex.DecodeString(sTicker)
+		if err != nil {
+			continue
+		}
+
+		ticker := string(bTicker)
+		bBalance, _, ok := utils.ParseByteArray(value, 1)
+		if !ok {
+			continue
+		}
+
+		res[ticker] = big.NewInt(0).SetBytes(bBalance)
+	}
+
+	return res, nil
+}
+
 func (acc *Account) GetCachedTokensBalances() (map[string]float64, error) {
 	if acc.refreshInterval == utils.NoRefresh {
 		return nil, utils.ErrRefreshIntervalNotSet
