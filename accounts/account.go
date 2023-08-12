@@ -144,6 +144,17 @@ func (acc *Account) GetEgldBalance() (float64, error) {
 	return balance, nil
 }
 
+func (acc *Account) GetHerotag() (string, error) {
+	addr, _ := sdkData.NewAddressFromBech32String(acc.address)
+	account, err := acc.netMan.GetProxy().GetAccount(context.Background(), addr)
+	if err != nil {
+		log.Error("get account", "error", err, "address", acc.address, "function", "GetEgldBalance")
+		return "", err
+	}
+
+	return account.Username, nil
+}
+
 func (acc *Account) GetCachedEgldBalance() (float64, error) {
 	if acc.refreshInterval == utils.NoRefresh {
 		return 0, utils.ErrRefreshIntervalNotSet

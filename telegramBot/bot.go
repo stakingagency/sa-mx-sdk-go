@@ -77,6 +77,11 @@ func (b *TelegramBot) SendMessage(chatID int64, text string) (tgbotapi.Message, 
 func (b *TelegramBot) SendFormattedMessage(chatID int64, text string, format string) (tgbotapi.Message, error) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = format
+	msg.DisableWebPagePreview = true
 
+	return b.tgBot.Send(msg)
+}
+
+func (b *TelegramBot) SendRaw(msg tgbotapi.Chattable) (tgbotapi.Message, error) {
 	return b.tgBot.Send(msg)
 }

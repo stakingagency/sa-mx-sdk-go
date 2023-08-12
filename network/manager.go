@@ -79,6 +79,29 @@ func (nm *NetworkManager) GetNetworkConfig() *sdkData.NetworkConfig {
 	return nm.netCfg
 }
 
+func (nm *NetworkManager) GetNetworkStatus() (*sdkData.NetworkStatus, error) {
+	args := blockchain.ArgsProxy{
+		ProxyURL:            nm.proxyAddress,
+		Client:              nil,
+		SameScState:         false,
+		ShouldBeSynced:      false,
+		FinalityCheck:       false,
+		CacheExpirationTime: time.Minute,
+		EntityType:          core.Proxy,
+	}
+	proxy, err := blockchain.NewProxy(args)
+	if err != nil {
+		return nil, err
+	}
+
+	netStatus, err := proxy.GetNetworkStatus(context.Background(), 4294967295)
+	if err != nil {
+		return nil, err
+	}
+
+	return netStatus, nil
+}
+
 func (nm *NetworkManager) QuerySC(scAddress, funcName string, args []string) (*sdkData.VmValuesResponseData, error) {
 	if args == nil {
 		args = make([]string, 0)
