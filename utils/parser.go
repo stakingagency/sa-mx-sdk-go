@@ -56,7 +56,7 @@ func ParseBool(bytes []byte, index int) (bool, int, bool) {
 
 func ParseBigInt(bytes []byte, index int) (*big.Int, int, bool) {
 	datalen := len(bytes)
-	if index+bigIntLenCap >= datalen {
+	if index+bigIntLenCap > datalen {
 		return nil, 0, false
 	}
 
