@@ -407,7 +407,7 @@ func (one *OneDex) GetFarms() (map[uint32]*Farm, error) {
 		}
 	}
 
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 	for key, value := range keys {
 		prefix := hex.EncodeToString([]byte("pool_user_stake_amount"))
 		if strings.HasPrefix(key, prefix) {
@@ -428,7 +428,7 @@ func (one *OneDex) GetFarms() (map[uint32]*Farm, error) {
 			}
 
 			farm := farms[farmID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			iAmount := big.NewInt(0).SetBytes(value)
 			fAmount := utils.Denominate(iAmount, int(farm.LpToken.Decimals))
 			farm.Farmers = append(farm.Farmers, &Farmer{
@@ -611,7 +611,7 @@ func (one *OneDex) GetFarms() (map[uint32]*Farm, error) {
 			}
 
 			farm := farms[farmID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			lastUpdate := big.NewInt(0).SetBytes(value)
 			for _, farmer := range farm.Farmers {
 				if farmer.Address == address {
@@ -666,7 +666,7 @@ func (one *OneDex) GetStakes() (map[uint32]*Stake, error) {
 		}
 	}
 
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 
 	oneToken, err := one.getToken(OneToken)
 	if err != nil {
@@ -695,7 +695,7 @@ func (one *OneDex) GetStakes() (map[uint32]*Stake, error) {
 			}
 
 			stake := stakes[stakeID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			iAmount := big.NewInt(0).SetBytes(value)
 			fAmount := utils.Denominate(iAmount, int(stake.Token.Decimals))
 			stake.Stakers = append(stake.Stakers, &Staker{
@@ -796,7 +796,7 @@ func (one *OneDex) GetStakes() (map[uint32]*Stake, error) {
 			}
 
 			stake := stakes[stakeID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			iAmount := big.NewInt(0).SetBytes(value)
 			fAmount := utils.Denominate(iAmount, int(stake.Token.Decimals))
 			for _, staker := range stake.Stakers {
@@ -826,7 +826,7 @@ func (one *OneDex) GetStakes() (map[uint32]*Stake, error) {
 			}
 
 			stake := stakes[stakeID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			lastUpdate := big.NewInt(0).SetBytes(value)
 			for _, staker := range stake.Stakers {
 				if staker.Address == address {
@@ -847,7 +847,7 @@ func (one *OneDex) GetLaunchpads() (map[uint32]*Launchpad, error) {
 	}
 
 	launchpads := make(map[uint32]*Launchpad)
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 	for key, value := range keys {
 		prefix := hex.EncodeToString([]byte("project_is_lived"))
 		if strings.HasPrefix(key, prefix) {
@@ -1159,7 +1159,7 @@ func (one *OneDex) GetLaunchpads() (map[uint32]*Launchpad, error) {
 			}
 
 			launchpad := launchpads[launchpadID]
-			address := conv.Encode(pubkey)
+			address, _ := conv.Encode(pubkey)
 			iAmount := big.NewInt(0).SetBytes(value)
 			token, err := one.getToken(launchpad.Token)
 			if err != nil {

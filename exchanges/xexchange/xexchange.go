@@ -96,7 +96,7 @@ func (xex *XExchange) GetCachedDexPairs() (map[string]*DexPair, error) {
 
 func (xex *XExchange) GetDexPairs() (map[string]*DexPair, error) {
 	pairs := make(map[string]*DexPair)
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 	prefix := hex.EncodeToString([]byte("pair_map.mapped"))
 	keys, err := xex.routerScAccount.GetAccountKeys(prefix)
 	if err != nil {
@@ -121,7 +121,7 @@ func (xex *XExchange) GetDexPairs() (map[string]*DexPair, error) {
 			continue
 		}
 
-		contractAddress := conv.Encode(value)
+		contractAddress, _ := conv.Encode(value)
 		pairTicker := fmt.Sprintf("%s %s", ticker1, ticker2)
 		pair, err := xex.getPairData(ticker1, ticker2, contractAddress)
 		if err == nil {
@@ -226,8 +226,8 @@ func (xex *XExchange) GetPairByTickers(ticker1 string, ticker2 string) (*DexPair
 		return nil, utils.ErrInvalidResponse
 	}
 
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
-	contractAddress := conv.Encode(contractPubkey)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
+	contractAddress, _ := conv.Encode(contractPubkey)
 
 	pair, err := xex.getPairData(ticker1, ticker2, contractAddress)
 	if err != nil {

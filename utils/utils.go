@@ -65,8 +65,8 @@ func GetDNSAddress(username string) string {
 	copy(base[:10], prefixMask)
 	copy(base[len(base)-2:], suffixMask)
 
-	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
-	dnsAddress := converter.Encode(base)
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
+	dnsAddress, _ := converter.Encode(base)
 
 	return dnsAddress
 }

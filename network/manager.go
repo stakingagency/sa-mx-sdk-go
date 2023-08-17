@@ -173,8 +173,8 @@ func (nm *NetworkManager) QueryScAddressResult(scAddress, funcName string, args 
 		return "", nil
 	}
 
-	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
-	address := converter.Encode(res.Data.ReturnData[0])
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
+	address, _ := converter.Encode(res.Data.ReturnData[0])
 
 	return address, nil
 }

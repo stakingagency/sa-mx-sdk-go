@@ -92,7 +92,7 @@ func (st *Staking) SetProviderSpaceAvailableCallback(f ProviderSpaceAvailableCal
 }
 
 func (st *Staking) GetAllProvidersAddresses() ([]string, error) {
-	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	converter, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 	query := &sdkData.VmValueRequest{
 		Address:  utils.DelegationManagerSC,
 		FuncName: "getAllContractAddresses",
@@ -105,7 +105,7 @@ func (st *Staking) GetAllProvidersAddresses() ([]string, error) {
 
 	addresses := make([]string, 0)
 	for _, pubKey := range res.Data.ReturnData {
-		address := converter.Encode(pubKey)
+		address, _ := converter.Encode(pubKey)
 		addresses = append(addresses, address)
 	}
 
@@ -163,7 +163,7 @@ func (st *Staking) GetMetaData(providerAddress string) (
 func (st *Staking) GetUserStakeInfo(address string, providerAddress string) (
 	stake *big.Int, reward *big.Int, undelegated *big.Int, unbondable *big.Int, err error,
 ) {
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
 	pubkey, _ := conv.Decode(address)
 	sPubKey := hex.EncodeToString(pubkey)
 	var stakeInfo []*big.Int
@@ -216,8 +216,8 @@ func (st *Staking) GetProviderConfig(providerAddress string) (*data.StakingProvi
 		return nil, utils.ErrInvalidResponse
 	}
 
-	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, log)
-	owner := conv.Encode(res[0].Bytes())
+	conv, _ := pubkeyConverter.NewBech32PubkeyConverter(32, "erd")
+	owner, _ := conv.Encode(res[0].Bytes())
 	cfg := &data.StakingProvider{
 		ContractAddress:  providerAddress,
 		Owner:            owner,

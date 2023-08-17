@@ -36,12 +36,12 @@ func (nm *NetworkManager) SendTransaction(privateKey []byte, receiver string, va
 		return "", err
 	}
 
-	txArgs, err := proxy.GetDefaultTransactionArguments(context.Background(), sender, nm.netCfg)
+	txArgs, _, err := proxy.GetDefaultTransactionArguments(context.Background(), sender, nm.netCfg)
 	if err != nil {
 		return "", err
 	}
 
-	txArgs.RcvAddr = receiver
+	txArgs.Receiver = receiver
 	txArgs.Value = utils.Renominate(value, 18).String()
 	txArgs.Data = []byte(dataField)
 
@@ -66,12 +66,12 @@ func (nm *NetworkManager) SendTransaction(privateKey []byte, receiver string, va
 		return "", err
 	}
 
-	tx, err := ti.ApplySignatureAndGenerateTx(holder, txArgs)
+	err = ti.ApplySignature(holder, &txArgs)
 	if err != nil {
 		return "", err
 	}
 
-	hash, err := ti.SendTransaction(context.Background(), tx)
+	hash, err := ti.SendTransaction(context.Background(), &txArgs)
 	if err != nil {
 		return "", err
 	}
