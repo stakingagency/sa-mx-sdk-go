@@ -66,7 +66,7 @@ func (nm *NetworkManager) SendTransaction(privateKey []byte, receiver string, va
 		return "", err
 	}
 
-	err = ti.ApplySignature(holder, &txArgs)
+	err = ti.ApplyUserSignature(holder, &txArgs)
 	if err != nil {
 		return "", err
 	}
