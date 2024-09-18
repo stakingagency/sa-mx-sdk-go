@@ -32,7 +32,8 @@ func main() {
 	address, _ := w.GetAddressFromPrivateKey(privateKey)
 
 	// instantiate an account object for the wallet address
-	account, err := accounts.NewAccount(address.AddressAsBech32String(), contract.GetNetworkManager(), utils.NoRefresh)
+	addr, _ := address.AddressAsBech32String()
+	account, err := accounts.NewAccount(addr, contract.GetNetworkManager(), utils.NoRefresh)
 	if err != nil {
 		fmt.Println(err)
 		return
